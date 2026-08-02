@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Receptionist Dashboard — Afristay</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ----- reset & base ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+
+    body {
+      background: #FAF9F6;
+      /* Warm White */
+      color: #1F2937;
+      /* Dark Charcoal */
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ----- sticky navigation bar ----- */
+    .navbar {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      background: #FFFFFF;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #E5E7EB;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+      gap: 12px;
+    }
+
+    .hotel-brand {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hotel-name {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #183A2D;
+      line-height: 1.2;
+    }
+
+    .hotel-role {
+      font-size: 12px;
+      color: #9CA3AF;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .nav-user {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1F2937;
+    }
+
+    .nav-user span {
+      color: #C8A86B;
+      font-weight: 600;
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid #E5E7EB;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1F2937;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover {
+      background: #183A2D;
+      color: #FAF9F6;
+      border-color: #183A2D;
+    }
+
+    /* ----- main content ----- */
+    main {
+      flex: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 32px;
+      width: 100%;
+    }
+
+    /* ----- tabs ----- */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #E5E7EB;
+    }
+
+    .tab {
+      padding: 12px 24px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: #6B7280;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: #183A2D;
+    }
+
+    .tab.active {
+      color: #183A2D;
+      border-bottom-color: #183A2D;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* ----- search panel ----- */
+    .search-panel {
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 1px solid #E5E7EB;
+      box-shadow: 0 2px 8px rgba(24, 58, 45, 0.04);
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 16px;
+      align-items: end;
+    }
+
+    .search-row .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1F2937;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .search-row input,
+    .search-row select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #E5E7EB;
+      border-radius: 10px;
+      font-size: 14px;
+      background: #FAF9F6;
+      transition: border 0.2s, box-shadow 0.2s;
+      color: #1F2937;
+    }
+
+    .search-row input:focus,
+    .search-row select:focus {
+      outline: none;
+      border-color: #183A2D;
+      box-shadow: 0 0 0 3px rgba(24, 58, 45, 0.08);
+      background: #FFFFFF;
+    }
+
+    .btn-primary {
+      background: #183A2D;
+      color: #FAF9F6;
+      border: none;
+      padding: 11px 28px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      box-shadow: 0 4px 10px rgba(24, 58, 45, 0.15);
+    }
+
+    .btn-primary:hover {
+      background: #0f2b21;
+      box-shadow: 0 6px 14px rgba(24, 58, 45, 0.25);
+      transform: scale(1.02);
+    }
+
+    /* ----- room grid ----- */
+    .room-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .room-card {
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid #E5E7EB;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(24, 58, 45, 0.04);
+    }
+
+    .room-card:hover {
+      box-shadow: 0 8px 24px rgba(24, 58, 45, 0.08);
+      transform: translateY(-2px);
+      border-color: #C8A86B;
+    }
+
+    .room-card .room-num {
+      font-size: 20px;
+      font-weight: 700;
+      color: #183A2D;
+    }
+
+    .room-card .room-type {
+      font-size: 13px;
+      color: #6B7280;
+      margin-bottom: 8px;
+    }
+
+    .room-card .room-rate {
+      font-size: 18px;
+      font-weight: 700;
+      color: #C8A86B;
+      margin-bottom: 16px;
+    }
+
+    .room-card button {
+      width: 100%;
+      padding: 10px;
+      background: #183A2D;
+      color: #FAF9F6;
+      border: none;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(24, 58, 45, 0.15);
+    }
+
+    .room-card button:hover {
+      background: #0f2b21;
+      box-shadow: 0 4px 12px rgba(24, 58, 45, 0.25);
+      transform: scale(1.02);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #9CA3AF;
+      font-size: 15px;
+      grid-column: 1 / -1;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #9CA3AF;
+    }
+
+    /* ----- table ----- */
+    .table-wrap {
+      background: #FFFFFF;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #E5E7EB;
+      box-shadow: 0 2px 8px rgba(24, 58, 45, 0.04);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 14px 18px;
+      font-size: 13px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+
+    th {
+      background: #FAF9F6;
+      color: #1F2937;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ----- badges ----- */
+    .badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge.pending {
+      background: #FEF3C7;
+      color: #D4A017;
+    }
+
+    .badge.confirmed {
+      background: #DBEAFE;
+      color: #183A2D;
+    }
+
+    .badge.checked_in {
+      background: #DCFCE7;
+      color: #2E7D32;
+    }
+
+    .badge.checked_out {
+      background: #F3F4F6;
+      color: #6B7280;
+    }
+
+    .badge.cancelled {
+      background: #FEE2E2;
+      color: #D9534F;
+    }
+
+    .badge.no_show {
+      background: #FEE2E2;
+      color: #D9534F;
+    }
+
+    .badge.unpaid {
+      background: #FEE2E2;
+      color: #D9534F;
+    }
+
+    .badge.partial {
+      background: #FEF3C7;
+      color: #D4A017;
+    }
+
+    .badge.paid {
+      background: #DCFCE7;
+      color: #2E7D32;
+    }
+
+    .badge.refunded {
+      background: #F3F4F6;
+      color: #6B7280;
+    }
+
+    .action-link {
+      color: #183A2D;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      margin-right: 10px;
+      background: none;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .action-link:hover {
+      background: #F3F4F6;
+    }
+
+    .action-link.danger {
+      color: #D9534F;
+    }
+
+    .action-link.danger:hover {
+      background: #FEE2E2;
+    }
+
+    /* ----- modals ----- */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: #FFFFFF;
+      border-radius: 20px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid #E5E7EB;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal h3 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #183A2D;
+      margin-bottom: 4px;
+    }
+
+    .modal .modal-sub {
+      font-size: 14px;
+      color: #6B7280;
+      margin-bottom: 20px;
+    }
+
+    .modal label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1F2937;
+      margin-bottom: 5px;
+      margin-top: 16px;
+    }
+
+    .modal input,
+    .modal select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #E5E7EB;
+      border-radius: 10px;
+      font-size: 14px;
+      background: #FAF9F6;
+      transition: border 0.2s, box-shadow 0.2s;
+      color: #1F2937;
+    }
+
+    .modal input:focus,
+    .modal select:focus {
+      outline: none;
+      border-color: #183A2D;
+      box-shadow: 0 0 0 3px rgba(24, 58, 45, 0.08);
+      background: #FFFFFF;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel {
+      background: #FAF9F6;
+      border: 1px solid #E5E7EB;
+      color: #1F2937;
+    }
+
+    .btn-cancel:hover {
+      background: #F3F4F6;
+    }
+
+    .btn-confirm {
+      background: #183A2D;
+      color: #FAF9F6;
+      border: none;
+      box-shadow: 0 4px 10px rgba(24, 58, 45, 0.15);
+    }
+
+    .btn-confirm:hover {
+      background: #0f2b21;
+      box-shadow: 0 6px 14px rgba(24, 58, 45, 0.25);
+      transform: scale(1.02);
+    }
+
+    .section-divider {
+      font-size: 12px;
+      font-weight: 700;
+      color: #9CA3AF;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #E5E7EB;
+    }
+
+    .error-msg {
+      color: #D9534F;
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+      background: #FDE8E7;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border-left: 4px solid #D9534F;
+    }
+
+    /* ----- footer ----- */
+    .footer {
+      margin-top: 48px;
+      padding: 24px 32px;
+      text-align: center;
+      border-top: 1px solid #E5E7EB;
+      background: #FFFFFF;
+    }
+
+    .footer-content {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #6B7280;
+    }
+
+    .footer-content .afristay {
+      font-weight: 700;
+      color: #183A2D;
+    }
+
+    .footer-content .afristay span {
+      color: #C8A86B;
+    }
+
+    /* ----- responsive ----- */
+    @media (max-width: 768px) {
+      .navbar {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+      }
+
+      .hotel-name {
+        font-size: 1.1rem;
+      }
+
+      main {
+        padding: 16px;
+      }
+
+      .search-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .search-row .btn-primary {
+        width: 100%;
+        justify-self: stretch;
+      }
+
+      .room-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      table {
+        font-size: 12px;
+        min-width: 700px;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+      }
+
+      .modal {
+        padding: 24px;
+        margin: 16px;
+      }
+
+      .footer {
+        padding: 16px;
+      }
+
+      .footer-content {
+        font-size: 12px;
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .room-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-user {
+        font-size: 12px;
+      }
+
+      .btn-logout {
+        font-size: 12px;
+        padding: 6px 14px;
+      }
+
+      .tab {
+        padding: 10px 16px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== STICKY NAVIGATION ===== -->
+  <nav class="navbar">
+    <div class="hotel-brand">
+      <div class="hotel-name" id="hotelName">Loading...</div>
+      <div class="hotel-role">Reception Dashboard</div>
+    </div>
+
+    <div class="nav-right">
+      <div class="nav-user" id="staffNameLabel">Loading...</div>
+      <button class="btn-logout" onclick="logout()">Log Out</button>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main>
+    <div class="tabs">
+      <div class="tab active" data-tab="search">Search &amp; Book</div>
+      <div class="tab" data-tab="bookings">All Bookings</div>
+    </div>
+
+    <!-- SEARCH & BOOK TAB -->
+    <div class="tab-content active" id="tab-search">
+      <div class="search-panel">
+        <div class="search-row">
+          <div class="field">
+            <label>Check-in</label>
+            <input type="date" id="searchCheckIn">
+          </div>
+          <div class="field">
+            <label>Check-out</label>
+            <input type="date" id="searchCheckOut">
+          </div>
+          <div class="field">
+            <label>Room Type</label>
+            <select id="searchType">
+              <option value="">All Types</option>
+              <option value="standard">Standard</option>
+              <option value="deluxe">Deluxe</option>
+              <option value="family">Family</option>
+              <option value="business">Business Suite</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="searchRooms()">Search Available Rooms</button>
+        </div>
+      </div>
+
+      <div class="room-grid" id="roomGrid">
+        <div class="empty-state">Choose your dates and search to see available rooms.</div>
+      </div>
+    </div>
+
+    <!-- ALL BOOKINGS TAB -->
+    <div class="tab-content" id="tab-bookings">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Guest</th>
+              <th>Room</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
+              <th>Status</th>
+              <th>Payment</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bookingsTableBody">
+            <tr><td colspan="7" class="loading">Loading bookings...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer-content">
+      <span>Powered by</span>
+      <span class="afristay">AFRI<span>STAY</span></span>
+      <span>• Hotel Management Platform</span>
+    </div>
+  </footer>
+
+  <!-- NEW BOOKING MODAL -->
+  <div class="modal-overlay" id="bookingModalOverlay">
+    <div class="modal">
+      <h3 id="bookingModalTitle">New Booking</h3>
+      <p class="modal-sub" id="bookingModalSub"></p>
+
+      <form id="bookingForm">
+        <div class="section-divider">Guest Details</div>
+        <label>Full Name</label>
+        <input type="text" id="guestName" required>
+
+        <label>Phone Number</label>
+        <input type="tel" id="guestPhone" required placeholder="080...">
+
+        <label>Email (optional)</label>
+        <input type="email" id="guestEmail">
+
+        <label>ID Type</label>
+        <select id="guestIdType">
+          <option value="">Select ID type</option>
+          <option value="national_id">National ID</option>
+          <option value="drivers_license">Driver's License</option>
+          <option value="voters_card">Voter's Card</option>
+          <option value="intl_passport">International Passport</option>
+        </select>
+
+        <label>ID Number</label>
+        <input type="text" id="guestIdNumber">
+
+        <div class="section-divider">Booking Details</div>
+        <label>Booking Source</label>
+        <select id="bookingSource">
+          <option value="walk_in">Walk-in</option>
+          <option value="phone">Phone Call</option>
+          <option value="whatsapp">WhatsApp</option>
+          <option value="online">Online</option>
+        </select>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeBookingModal()">Cancel</button>
+          <button type="submit" class="btn-confirm">Confirm Booking</button>
+        </div>
+        <p class="error-msg" id="bookingError"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- PAYMENT MODAL -->
+  <div class="modal-overlay" id="paymentModalOverlay">
+    <div class="modal">
+      <h3>Record Payment</h3>
+      <p class="modal-sub" id="paymentModalSub"></p>
+
+      <form id="paymentForm">
+        <label>Amount Paid (₦)</label>
+        <input type="number" id="paymentAmount" required min="1" step="0.01">
+
+        <label>Payment Method</label>
+        <select id="paymentMethod" required>
+          <option value="cash">Cash</option>
+          <option value="transfer">Bank Transfer</option>
+          <option value="pos">POS</option>
+        </select>
+
+        <label>Reference (optional, for transfer/POS)</label>
+        <input type="text" id="paymentReference" placeholder="e.g. transaction ID">
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closePaymentModal()">Cancel</button>
+          <button type="submit" class="btn-confirm">Record Payment</button>
+        </div>
+        <p class="error-msg" id="paymentError"></p>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth-guard.js"></script>
+  <script>
+    let currentStaff = null;
+    let selectedRoom = null;
+    let hotelName = '';
+
+    async function init() {
+      currentStaff = await requireAuth(["receptionist", "manager"]);
+      if (!currentStaff) return;
+
+      // Fetch hotel name
+      const { data: hotel, error: hotelError } = await supabaseClient
+        .from("hotels")
+        .select("name")
+        .eq("id", currentStaff.hotel_id)
+        .single();
+
+      if (!hotelError && hotel) {
+        hotelName = hotel.name;
+        document.getElementById("hotelName").textContent = hotelName;
+      } else {
+        document.getElementById("hotelName").textContent = "Hotel Dashboard";
+      }
+
+      document.getElementById("staffNameLabel").innerHTML = `${currentStaff.full_name} <span>— ${capitalize(currentStaff.role)}</span>`;
+
+      // Default dates: today and tomorrow
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      document.getElementById("searchCheckIn").value = today.toISOString().split("T")[0];
+      document.getElementById("searchCheckOut").value = tomorrow.toISOString().split("T")[0];
+
+      await loadBookings();
+    }
+
+    // ============ TABS ============
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(`tab-${tab.dataset.tab}`).classList.add("active");
+      });
+    });
+
+    // ============ SEARCH ROOMS ============
+    async function searchRooms() {
+      const checkIn = document.getElementById("searchCheckIn").value;
+      const checkOut = document.getElementById("searchCheckOut").value;
+      const roomType = document.getElementById("searchType").value;
+
+      if (!checkIn || !checkOut) {
+        alert("Please select both check-in and check-out dates.");
+        return;
+      }
+      if (checkOut <= checkIn) {
+        alert("Check-out date must be after check-in date.");
+        return;
+      }
+
+      const grid = document.getElementById("roomGrid");
+      grid.innerHTML = `<div class="loading">Searching...</div>`;
+
+      let query = supabaseClient
+        .from("rooms")
+        .select("*")
+        .eq("hotel_id", currentStaff.hotel_id)
+        .not("status", "in", "(maintenance,cleaning)");
+
+      if (roomType) query = query.eq("room_type", roomType);
+
+      const { data: rooms, error: roomsError } = await query.order("room_number");
+
+      if (roomsError) {
+        grid.innerHTML = `<div class="empty-state">Error loading rooms.</div>`;
+        return;
+      }
+
+      const { data: overlapping, error: bookingsError } = await supabaseClient
+        .from("bookings")
+        .select("room_id")
+        .in("status", ["pending", "confirmed", "checked_in"])
+        .lt("check_in_date", checkOut)
+        .gt("check_out_date", checkIn);
+
+      if (bookingsError) {
+        grid.innerHTML = `<div class="empty-state">Error checking availability.</div>`;
+        return;
+      }
+
+      const bookedRoomIds = new Set((overlapping || []).map(b => b.room_id));
+      const availableRooms = rooms.filter(r => !bookedRoomIds.has(r.id));
+
+      if (!availableRooms.length) {
+        grid.innerHTML = `<div class="empty-state">No rooms available for these dates.</div>`;
+        return;
+      }
+
+      grid.innerHTML = availableRooms.map(r => `
+        <div class="room-card">
+          <div class="room-num">Room ${r.room_number}</div>
+          <div class="room-type">${capitalize(r.room_type)}</div>
+          <div class="room-rate">₦${Number(r.rate_per_night).toLocaleString()}/night</div>
+          <button onclick='openBookingModal(${JSON.stringify(r)}, "${checkIn}", "${checkOut}")'>Book This Room</button>
+        </div>
+      `).join("");
+    }
+
+    // ============ NEW BOOKING ============
+    function openBookingModal(room, checkIn, checkOut) {
+      selectedRoom = { ...room, checkIn, checkOut };
+      document.getElementById("bookingModalTitle").textContent = `Book Room ${room.room_number}`;
+      document.getElementById("bookingModalSub").textContent =
+        `${capitalize(room.room_type)} • ${checkIn} to ${checkOut} • ₦${Number(room.rate_per_night).toLocaleString()}/night`;
+      document.getElementById("bookingError").style.display = "none";
+      document.getElementById("bookingModalOverlay").classList.add("open");
+    }
+
+    function closeBookingModal() {
+      document.getElementById("bookingModalOverlay").classList.remove("open");
+      document.getElementById("bookingForm").reset();
+      selectedRoom = null;
+    }
+
+    document.getElementById("bookingForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errorMsg = document.getElementById("bookingError");
+      errorMsg.style.display = "none";
+
+      const full_name = document.getElementById("guestName").value.trim();
+      const phone = document.getElementById("guestPhone").value.trim();
+      const email = document.getElementById("guestEmail").value.trim();
+      const id_type = document.getElementById("guestIdType").value || null;
+      const id_number = document.getElementById("guestIdNumber").value.trim() || null;
+      const booking_source = document.getElementById("bookingSource").value;
+
+      try {
+        const { data: guest, error: guestError } = await supabaseClient
+          .from("guests")
+          .insert({ full_name, phone, email: email || null, id_type, id_number })
+          .select()
+          .single();
+        if (guestError) throw guestError;
+
+        const { data: booking, error: bookingError } = await supabaseClient
+          .from("bookings")
+          .insert({
+            room_id: selectedRoom.id,
+            guest_id: guest.id,
+            created_by: currentStaff.id,
+            booking_source,
+            check_in_date: selectedRoom.checkIn,
+            check_out_date: selectedRoom.checkOut,
+            status: "confirmed",
+          })
+          .select()
+          .single();
+        if (bookingError) throw bookingError;
+
+        const nights = Math.round(
+          (new Date(selectedRoom.checkOut) - new Date(selectedRoom.checkIn)) / (1000 * 60 * 60 * 24)
+        );
+        const roomCharge = nights * selectedRoom.rate_per_night;
+        const serviceCharge = roomCharge * 0.10;
+
+        const { error: invoiceError } = await supabaseClient
+          .from("invoices")
+          .insert({
+            booking_id: booking.id,
+            room_charge: roomCharge,
+            service_charge: serviceCharge,
+          });
+        if (invoiceError) throw invoiceError;
+
+        const bookingMessage = `Hello ${full_name}! Your booking at ${hotelName} is confirmed.\n\nRoom: ${selectedRoom.room_number} (${capitalize(selectedRoom.room_type)})\nCheck-in: ${selectedRoom.checkIn}\nCheck-out: ${selectedRoom.checkOut}\nTotal: ₦${(roomCharge + serviceCharge + Math.round((roomCharge + serviceCharge) * 0.075)).toLocaleString()}\n\nWe look forward to hosting you!`;
+
+        await supabaseClient.from("notifications").insert({
+          guest_id: guest.id,
+          type: "booking_confirmed",
+          channel: "whatsapp",
+          message: bookingMessage,
+        });
+
+        alert("Booking created successfully! Opening WhatsApp to confirm with the guest...");
+        closeBookingModal();
+        sendWhatsApp(phone, bookingMessage);
+        await searchRooms();
+        await loadBookings();
+
+      } catch (err) {
+        errorMsg.textContent = err.message || "Failed to create booking.";
+        errorMsg.style.display = "block";
+      }
+    });
+
+    // ============ ALL BOOKINGS ============
+    async function loadBookings() {
+      const { data: bookings, error } = await supabaseClient
+        .from("bookings")
+        .select(`
+          id, check_in_date, check_out_date, status, room_id,
+          guests ( full_name, phone ),
+          rooms ( room_number, room_type ),
+          invoices ( id, total, status )
+        `)
+        .order("created_at", { ascending: false });
+
+      const tbody = document.getElementById("bookingsTableBody");
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Error loading bookings.</td></tr>`;
+        return;
+      }
+
+      if (!bookings.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No bookings yet.</td></tr>`;
+        return;
+      }
+
+      const todayStr = new Date().toISOString().split("T")[0];
+
+      tbody.innerHTML = bookings.map(b => {
+        const invoice = Array.isArray(b.invoices) ? b.invoices[0] : b.invoices;
+        const invoiceStatus = invoice?.status || "unpaid";
+        const invoiceTotal = invoice?.total || 0;
+
+        return `
+        <tr>
+          <td>${b.guests?.full_name || "—"}<br><span style="color:#9CA3AF;font-size:12px">${b.guests?.phone || ""}</span></td>
+          <td>${b.rooms?.room_number || "—"} <span style="color:#9CA3AF">(${capitalize(b.rooms?.room_type || "")})</span></td>
+          <td>${b.check_in_date}</td>
+          <td>${b.check_out_date}</td>
+          <td><span class="badge ${b.status}">${capitalize(b.status.replace("_", " "))}</span></td>
+          <td>
+            <span class="badge ${invoiceStatus}">${capitalize(invoiceStatus)}</span><br>
+            <span style="color:#9CA3AF;font-size:11px">₦${Number(invoiceTotal).toLocaleString()}</span>
+          </td>
+          <td>
+            <button class="action-link" onclick="messageGuest('${(b.guests?.phone || "").replace(/'/g, "")}', '${(b.guests?.full_name || "").replace(/'/g, "")}', '${(b.rooms?.room_number || "").replace(/'/g, "")}')">Message</button>
+            ${invoice && invoiceStatus !== "paid" ? `
+              <button class="action-link" onclick="openPaymentModal('${invoice.id}', ${invoiceTotal})">Record Payment</button>
+            ` : ""}
+            ${["pending", "confirmed"].includes(b.status) ? `
+              <button class="action-link" onclick="checkInBooking('${b.id}', '${b.room_id}', '${(b.rooms?.room_number || "").replace(/'/g, "")}', '${invoiceStatus}')">Check In</button>
+              <button class="action-link danger" onclick="cancelBooking('${b.id}')">Cancel</button>
+              ${b.check_in_date < todayStr ? `
+                <button class="action-link danger" onclick="markNoShow('${b.id}', '${b.room_id}')">No-show</button>
+              ` : ""}
+            ` : ""}
+            ${b.status === "checked_in" ? `
+              <button class="action-link" onclick="checkOutBooking('${b.id}', '${b.room_id}')">Check Out</button>
+            ` : ""}
+          </td>
+        </tr>
+      `;
+      }).join("");
+    }
+
+    // ============ PAYMENTS ============
+    let currentInvoiceId = null;
+
+    function openPaymentModal(invoiceId, invoiceTotal) {
+      currentInvoiceId = invoiceId;
+      document.getElementById("paymentModalSub").textContent = `Invoice total: ₦${Number(invoiceTotal).toLocaleString()}`;
+      document.getElementById("paymentAmount").value = invoiceTotal;
+      document.getElementById("paymentError").style.display = "none";
+      document.getElementById("paymentModalOverlay").classList.add("open");
+    }
+
+    function closePaymentModal() {
+      document.getElementById("paymentModalOverlay").classList.remove("open");
+      document.getElementById("paymentForm").reset();
+      currentInvoiceId = null;
+    }
+
+    document.getElementById("paymentForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errorMsg = document.getElementById("paymentError");
+      errorMsg.style.display = "none";
+
+      const amount = parseFloat(document.getElementById("paymentAmount").value);
+      const method = document.getElementById("paymentMethod").value;
+      const reference = document.getElementById("paymentReference").value.trim() || null;
+
+      try {
+        const { error: paymentError } = await supabaseClient
+          .from("payments")
+          .insert({
+            invoice_id: currentInvoiceId,
+            amount,
+            method,
+            reference,
+            recorded_by: currentStaff.id,
+          });
+        if (paymentError) throw paymentError;
+
+        const { data: invoice } = await supabaseClient
+          .from("invoices")
+          .select("total")
+          .eq("id", currentInvoiceId)
+          .single();
+
+        const { data: allPayments } = await supabaseClient
+          .from("payments")
+          .select("amount")
+          .eq("invoice_id", currentInvoiceId);
+
+        const totalPaid = (allPayments || []).reduce((sum, p) => sum + Number(p.amount), 0);
+        const newStatus = totalPaid >= Number(invoice.total) ? "paid" : "partial";
+
+        const { error: updateError } = await supabaseClient
+          .from("invoices")
+          .update({ status: newStatus })
+          .eq("id", currentInvoiceId);
+        if (updateError) throw updateError;
+
+        const { data: invoiceDetails } = await supabaseClient
+          .from("invoices")
+          .select(`
+            total,
+            bookings ( guests ( full_name, phone ), rooms ( room_number ) )
+          `)
+          .eq("id", currentInvoiceId)
+          .single();
+
+        const guestInfo = invoiceDetails?.bookings?.guests;
+        const roomInfo = invoiceDetails?.bookings?.rooms;
+        const paymentMessage = `Hello ${guestInfo?.full_name || ""}! We've received your payment of ₦${amount.toLocaleString()} (${capitalize(method)}) for Room ${roomInfo?.room_number || ""} at ${hotelName}.\n\nInvoice status: ${capitalize(newStatus)}${newStatus === "partial" ? ` — remaining balance: ₦${(Number(invoiceDetails?.total || 0) - totalPaid).toLocaleString()}` : ""}.\n\nThank you!`;
+
+        await supabaseClient.from("notifications").insert({
+          type: "payment_received",
+          channel: "whatsapp",
+          message: paymentMessage,
+        });
+
+        alert(newStatus === "paid" ? "Payment recorded — invoice fully paid. Opening WhatsApp receipt..." : "Partial payment recorded. Opening WhatsApp receipt...");
+        closePaymentModal();
+        sendWhatsApp(guestInfo?.phone, paymentMessage);
+        await loadBookings();
+
+      } catch (err) {
+        errorMsg.textContent = err.message || "Failed to record payment.";
+        errorMsg.style.display = "block";
+      }
+    });
+
+    async function checkInBooking(bookingId, roomId, roomNumber, invoiceStatus) {
+      if (invoiceStatus !== "paid") {
+        alert(`Cannot check in — this booking's invoice is not fully paid yet (currently: ${capitalize(invoiceStatus)}). Please record full payment first.`);
+        return;
+      }
+
+      if (!confirm(`Confirm check-in for Room ${roomNumber}? The room key will be logged as issued.`)) return;
+
+      try {
+        const { error: bookingError } = await supabaseClient
+          .from("bookings")
+          .update({ status: "checked_in" })
+          .eq("id", bookingId);
+        if (bookingError) throw bookingError;
+
+        const { error: roomError } = await supabaseClient
+          .from("rooms")
+          .update({ status: "occupied" })
+          .eq("id", roomId);
+        if (roomError) throw roomError;
+
+        const { error: keyError } = await supabaseClient
+          .from("room_keys")
+          .insert({
+            booking_id: bookingId,
+            key_id: `Room ${roomNumber} Key`,
+            issued_at: new Date().toISOString(),
+          });
+        if (keyError) throw keyError;
+
+        alert(`Checked in successfully. Room ${roomNumber} is now occupied.`);
+        await loadBookings();
+        await searchRooms();
+
+      } catch (err) {
+        alert("Check-in failed: " + (err.message || "Unknown error"));
+      }
+    }
+
+    async function checkOutBooking(bookingId, roomId) {
+      const { data: invoice } = await supabaseClient
+        .from("invoices")
+        .select("status, total")
+        .eq("booking_id", bookingId)
+        .single();
+
+      if (invoice && invoice.status !== "paid") {
+        const proceed = confirm(
+          `Warning: this booking's invoice is marked "${invoice.status}" (₦${Number(invoice.total).toLocaleString()} total, not fully paid). Check out anyway?`
+        );
+        if (!proceed) return;
+      } else {
+        if (!confirm("Confirm check-out for this guest?")) return;
+      }
+
+      try {
+        const { error: bookingError } = await supabaseClient
+          .from("bookings")
+          .update({ status: "checked_out" })
+          .eq("id", bookingId);
+        if (bookingError) throw bookingError;
+
+        const { error: roomError } = await supabaseClient
+          .from("rooms")
+          .update({ status: "cleaning" })
+          .eq("id", roomId);
+        if (roomError) throw roomError;
+
+        const { error: taskError } = await supabaseClient
+          .from("housekeeping_logs")
+          .insert({
+            room_id: roomId,
+            staff_id: currentStaff.id,
+            task: "cleaning",
+            status: "pending",
+            notes: "Auto-created after guest check-out",
+          });
+        if (taskError) throw taskError;
+
+        const { data: keyRecord } = await supabaseClient
+          .from("room_keys")
+          .select("id")
+          .eq("booking_id", bookingId)
+          .is("returned_at", null)
+          .order("issued_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (keyRecord) {
+          await supabaseClient
+            .from("room_keys")
+            .update({ returned_at: new Date().toISOString() })
+            .eq("id", keyRecord.id);
+        }
+
+        alert("Checked out successfully. Room sent to housekeeping for cleaning.");
+        await loadBookings();
+        await searchRooms();
+
+      } catch (err) {
+        alert("Check-out failed: " + (err.message || "Unknown error"));
+      }
+    }
+
+    async function cancelBooking(bookingId) {
+      if (!confirm("Cancel this booking?")) return;
+
+      const { data: bookingDetails } = await supabaseClient
+        .from("bookings")
+        .select("guests ( full_name, phone ), rooms ( room_number )")
+        .eq("id", bookingId)
+        .single();
+
+      const { error } = await supabaseClient
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", bookingId);
+
+      if (error) {
+        alert("Failed to cancel booking.");
+        return;
+      }
+
+      const guestInfo = bookingDetails?.guests;
+      const cancelMessage = `Hello ${guestInfo?.full_name || ""}, your booking for Room ${bookingDetails?.rooms?.room_number || ""} at ${hotelName} has been cancelled. If this wasn't expected, please contact us.`;
+
+      await supabaseClient.from("notifications").insert({
+        type: "cancellation",
+        channel: "whatsapp",
+        message: cancelMessage,
+      });
+
+      if (guestInfo?.phone) sendWhatsApp(guestInfo.phone, cancelMessage);
+
+      await loadBookings();
+      await searchRooms();
+    }
+
+    async function markNoShow(bookingId, roomId) {
+      if (!confirm("Mark this booking as a no-show? The room will be freed up.")) return;
+
+      const { data: bookingDetails } = await supabaseClient
+        .from("bookings")
+        .select("guests ( full_name, phone ), rooms ( room_number )")
+        .eq("id", bookingId)
+        .single();
+
+      const { error } = await supabaseClient
+        .from("bookings")
+        .update({ status: "no_show" })
+        .eq("id", bookingId);
+
+      if (error) {
+        alert("Failed to mark as no-show.");
+        return;
+      }
+
+      await supabaseClient.from("rooms").update({ status: "available" }).eq("id", roomId);
+
+      const guestInfo = bookingDetails?.guests;
+      if (guestInfo?.phone) {
+        const message = `Hello ${guestInfo.full_name || ""}, we marked your reservation for Room ${bookingDetails?.rooms?.room_number || ""} at ${hotelName} as a no-show since check-in wasn't completed. Please contact us if this is a mistake.`;
+        sendWhatsApp(guestInfo.phone, message);
+      }
+
+      await loadBookings();
+      await searchRooms();
+    }
+
+    function messageGuest(phone, guestName, roomNumber) {
+      const message = `Hello ${guestName || ""}, this is regarding your booking for Room ${roomNumber || ""} at ${hotelName}. `;
+      sendWhatsApp(phone, message);
+    }
+
+    function sendWhatsApp(phone, message) {
+      if (!phone) {
+        alert("No phone number on file for this guest.");
+        return;
+      }
+      let clean = phone.replace(/\D/g, "");
+      if (clean.startsWith("0")) clean = "234" + clean.slice(1);
+      else if (!clean.startsWith("234")) clean = "234" + clean;
+
+      const url = `https://wa.me/${clean}?text=${encodeURIComponent(message)}`;
+      window.open(url, "_blank");
+    }
+
+    function capitalize(str) {
+      if (!str) return "";
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function logout() {
+      if (confirm("Log out of your account?")) {
+        window.location.href = "login.html";
+      }
+    }
+
+    init();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register Your Hotel — Afristay</title>
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+  </script>
+  <style>
+    /* ----- reset & base ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+
+    body {
+      background: #FAF9F6;
+      /* Warm White */
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 20px;
+    }
+
+    /* ----- sticky navigation bar ----- */
+    .navbar {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      max-width: 1280px;
+      background: #FAF9F6;
+      /* Warm White */
+      padding: 18px 32px;
+      margin: 0 auto 32px auto;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      border-bottom: 1px solid #E5E7EB;
+      /* Light Grey border */
+      z-index: 10;
+      backdrop-filter: blur(2px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+      gap: 12px;
+    }
+
+    /* logo placement – top‑left with image support */
+    .logo-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .logo-image {
+      height: 100px;
+      width: auto;
+      display: block;
+    }
+
+    .logo-text {
+      font-size: 1.8rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #183A2D;
+      /* Deep Forest Green */
+    }
+
+    .logo-text span {
+      color: #C8A86B;
+      /* Soft Gold */
+    }
+
+    /* if logo image is present, hide text */
+    .logo-link.has-image .logo-text {
+      display: none;
+    }
+
+    /* navigation spacer */
+    .nav-spacer {
+      flex: 1;
+    }
+
+    /* optional dummy nav links – just for visual balance */
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      font-weight: 500;
+      color: #1F2937;
+      /* Dark Charcoal */
+      font-size: 0.95rem;
+    }
+
+    .nav-links a {
+      color: #1F2937;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #C8A86B;
+      /* Soft Gold */
+    }
+
+    /* ----- main card – exactly matches spec ----- */
+    .card {
+      background: #FFFFFF;
+      /* White card */
+      border-radius: 20px;
+      padding: 40px 36px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 12px 32px rgba(24, 58, 45, 0.06);
+      border: 1px solid #E5E7EB;
+      /* Light Grey border */
+      margin: 12px auto 40px auto;
+      transition: box-shadow 0.2s;
+    }
+
+    .card h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #183A2D;
+      /* Deep Forest Green */
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+
+    .card .subtitle {
+      color: #1F2937;
+      /* Dark Charcoal */
+      opacity: 0.7;
+      margin-bottom: 28px;
+      font-size: 15px;
+      font-weight: 400;
+      border-left: 3px solid #C8A86B;
+      padding-left: 14px;
+    }
+
+    /* ----- form elements ----- */
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1F2937;
+      /* Dark Charcoal */
+      margin-bottom: 5px;
+      margin-top: 18px;
+      letter-spacing: 0.3px;
+    }
+
+    label:first-of-type {
+      margin-top: 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #E5E7EB;
+      /* Light Grey */
+      border-radius: 12px;
+      font-size: 15px;
+      background: #FAF9F6;
+      /* Warm White background inside inputs */
+      transition: border 0.2s, box-shadow 0.2s;
+      color: #1F2937;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #183A2D;
+      /* Deep Forest Green */
+      box-shadow: 0 0 0 3px rgba(24, 58, 45, 0.12);
+      background: #FFFFFF;
+    }
+
+    input::placeholder {
+      color: #9CA3AF;
+      font-weight: 400;
+      opacity: 0.7;
+    }
+
+    /* ----- buttons & status ----- */
+    button {
+      width: 100%;
+      margin-top: 28px;
+      padding: 14px 18px;
+      background: #183A2D;
+      /* Deep Forest Green */
+      color: #FAF9F6;
+      border: none;
+      border-radius: 40px;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 4px 10px rgba(24, 58, 45, 0.15);
+    }
+
+    button:hover {
+      background: #0f2b21;
+      box-shadow: 0 6px 14px rgba(24, 58, 45, 0.25);
+      transform: scale(1.01);
+    }
+
+    button:disabled {
+      background: #9bb8ac;
+      /* muted green */
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .error {
+      color: #D9534F;
+      /* Soft Red */
+      font-size: 14px;
+      margin-top: 16px;
+      display: none;
+      background: #fde8e7;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border-left: 4px solid #D9534F;
+    }
+
+    .link {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 14px;
+      color: #1F2937;
+      opacity: 0.8;
+    }
+
+    .link a {
+      color: #183A2D;
+      /* Deep Forest Green */
+      font-weight: 600;
+      text-decoration: none;
+      border-bottom: 1px solid #C8A86B;
+      transition: color 0.2s;
+    }
+
+    .link a:hover {
+      color: #C8A86B;
+      /* Soft Gold */
+      border-bottom-color: #183A2D;
+    }
+
+    /* responsive */
+    @media (max-width: 520px) {
+      .navbar {
+        padding: 14px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .nav-links {
+        gap: 16px;
+        font-size: 0.85rem;
+      }
+      .logo-text {
+        font-size: 1.5rem;
+      }
+      .logo-image {
+        height: 32px;
+      }
+      .card {
+        padding: 28px 20px;
+      }
+      .card h1 {
+        font-size: 22px;
+      }
+    }
+
+    /* success / warning / error colours – kept for future use */
+    .text-success {
+      color: #2E7D32;
+    }
+    .text-warning {
+      color: #D4A017;
+    }
+    .text-error {
+      color: #D9534F;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== STICKY NAVIGATION ===== -->
+  <nav class="navbar">
+    <!-- Logo top‑left with image support -->
+    <a href="#" class="logo-link" id="logoLink">
+      <!-- === REPLACE THE SRC BELOW WITH YOUR ACTUAL LOGO IMAGE URL === -->
+      <img 
+        src="ChatGPT Image Jul 29, 2026, 01_06_15 PM.png" 
+        alt="Afristay Logo" 
+        class="logo-image" 
+        id="logoImage"
+      />
+      <!-- Text fallback (hidden when image is present) -->
+      <span class="logo-text">AFRI<span>STAY</span></span>
+    </a>
+
+    <div class="nav-spacer"></div>
+    <!-- clean, spacious nav links (dummy) -->
+    <div class="nav-links">
+      <a href="#">Hotels</a>
+      <a href="#">Experiences</a>
+      <a href="#">Help</a>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN CARD ===== -->
+  <div class="card">
+    <h1>Set Up Your Hotel</h1>
+    <p class="subtitle">Create your hotel and manager account to get started on Afristay</p>
+
+    <form id="setupForm" autocomplete="off">
+      <label for="hotelName">Hotel Name</label>
+      <input type="text" id="hotelName" required placeholder="e.g. Bakura Suites" />
+
+      <label for="city">City</label>
+      <input type="text" id="city" required placeholder="e.g. Yola" />
+
+      <label for="address">Hotel Address</label>
+      <input type="text" id="address" required placeholder="Street, area" />
+
+      <label for="hotelPhone">Hotel Phone</label>
+      <input type="tel" id="hotelPhone" required placeholder="080..." />
+
+      <label for="managerName">Your Full Name (Manager)</label>
+      <input type="text" id="managerName" required />
+
+      <label for="email">Your Email</label>
+      <input type="email" id="email" required />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" required minlength="6" />
+
+      <button type="submit" id="submitBtn">Create Hotel &amp; Account</button>
+      <p class="error" id="errorMsg"></p>
+    </form>
+
+    <p class="link">Already have an account? <a href="login.html">Log in</a></p>
+  </div>
+
+  <!-- ===== SUPABASE CONFIG ===== -->
+  <script src="js/supabase-config.js"></script>
+
+  <script>
+    (function() {
+      // ---- ensure supabaseClient is available ----
+      if (typeof supabaseClient === 'undefined') {
+        console.warn('supabaseClient not found — using fallback dummy client');
+        // fallback: create a dummy client to avoid breaking the UI
+        window.supabaseClient = {
+          auth: { signUp: () => Promise.reject(new Error('Supabase not configured')) },
+          rpc: () => Promise.reject(new Error('Supabase not configured'))
+        };
+      }
+
+      // ---- Logo image handler: if logo loads successfully, hide text ----
+      const logoImage = document.getElementById('logoImage');
+      const logoLink = document.getElementById('logoLink');
+
+      if (logoImage) {
+        // If image loads successfully, add class to hide text
+        logoImage.addEventListener('load', function() {
+          logoLink.classList.add('has-image');
+        });
+        // If image fails to load, show text fallback
+        logoImage.addEventListener('error', function() {
+          logoLink.classList.remove('has-image');
+          // Optionally remove the broken image
+          this.style.display = 'none';
+        });
+        // Check if image is already cached and loaded
+        if (logoImage.complete && logoImage.naturalWidth > 0) {
+          logoLink.classList.add('has-image');
+        }
+      }
+
+      const form = document.getElementById('setupForm');
+      const btn = document.getElementById('submitBtn');
+      const errorMsg = document.getElementById('errorMsg');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // reset UI
+        errorMsg.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+
+        // gather fields
+        const hotelName = document.getElementById('hotelName').value.trim();
+        const city = document.getElementById('city').value.trim();
+        const address = document.getElementById('address').value.trim();
+        const hotelPhone = document.getElementById('hotelPhone').value.trim();
+        const managerName = document.getElementById('managerName').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        try {
+          // 1. create auth user
+          const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+            email,
+            password,
+          });
+          if (authError) throw authError;
+
+          // 2. call RPC to create hotel + manager in one atomic step
+          const { error: rpcError } = await supabaseClient.rpc('create_hotel_and_manager', {
+            p_hotel_name: hotelName,
+            p_city: city,
+            p_address: address,
+            p_hotel_phone: hotelPhone,
+            p_manager_name: managerName,
+          });
+          if (rpcError) throw rpcError;
+
+          // success
+          alert('Hotel created! Redirecting you to log in...');
+          window.location.href = 'login.html';
+        } catch (err) {
+          errorMsg.textContent = err.message || 'Something went wrong. Please try again.';
+          errorMsg.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Create Hotel & Account';
+        }
+      });
+    })();
+  </script>
+
+</body>
+</html>

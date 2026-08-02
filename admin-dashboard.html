@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — Afristay</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ----- reset & base ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+
+    body {
+      background: #FAF9F6;
+      color: #1F2937;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ----- sticky navigation bar ----- */
+    .navbar {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      background: #183A2D;
+      /* Deep Forest Green */
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      gap: 12px;
+    }
+
+    .logo-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .logo-image {
+      height: 85px;
+      width: auto;
+      display: block;
+    }
+
+    .logo-text {
+      font-size: 1.8rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #FAF9F6;
+      /* Warm White */
+    }
+
+    .logo-text span {
+      color: #C8A86B;
+      /* Soft Gold */
+    }
+
+    .logo-link.has-image .logo-text {
+      display: none;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .nav-user {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 500;
+    }
+
+    .nav-user span {
+      color: #C8A86B;
+      font-weight: 600;
+    }
+
+    .btn-logout {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #FAF9F6;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* ----- main content ----- */
+    main {
+      flex: 1;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px 32px;
+      width: 100%;
+    }
+
+    /* ----- tabs ----- */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #E5E7EB;
+    }
+
+    .tab {
+      padding: 12px 24px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: #6B7280;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: #183A2D;
+    }
+
+    .tab.active {
+      color: #183A2D;
+      border-bottom-color: #183A2D;
+    }
+
+    .tab .count {
+      display: inline-block;
+      background: #F3F4F6;
+      color: #6B7280;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 10px;
+      border-radius: 20px;
+      margin-left: 6px;
+    }
+
+    .tab.active .count {
+      background: #183A2D;
+      color: #FAF9F6;
+    }
+
+    /* ----- hotel grid ----- */
+    .hotel-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .hotel-card {
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 20px 24px;
+      border: 1px solid #E5E7EB;
+      box-shadow: 0 2px 8px rgba(24, 58, 45, 0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      transition: all 0.2s;
+    }
+
+    .hotel-card:hover {
+      box-shadow: 0 8px 24px rgba(24, 58, 45, 0.06);
+      border-color: #C8A86B;
+    }
+
+    .hotel-info .name {
+      font-size: 17px;
+      font-weight: 700;
+      color: #183A2D;
+    }
+
+    .hotel-info .meta {
+      font-size: 13px;
+      color: #6B7280;
+      margin-top: 4px;
+    }
+
+    .hotel-info .meta .separator {
+      margin: 0 6px;
+      color: #E5E7EB;
+    }
+
+    .hotel-info .badge-wrap {
+      margin-top: 6px;
+    }
+
+    /* ----- badges ----- */
+    .badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge.pending {
+      background: #FEF3C7;
+      color: #D4A017;
+    }
+
+    .badge.approved {
+      background: #DCFCE7;
+      color: #2E7D32;
+    }
+
+    .badge.rejected {
+      background: #FEE2E2;
+      color: #D9534F;
+    }
+
+    /* ----- hotel actions ----- */
+    .hotel-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hotel-actions button {
+      padding: 8px 18px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .hotel-actions button:hover {
+      transform: scale(1.02);
+    }
+
+    .btn-approve {
+      background: #DCFCE7;
+      color: #2E7D32;
+    }
+
+    .btn-approve:hover {
+      background: #2E7D32;
+      color: #FAF9F6;
+    }
+
+    .btn-reject {
+      background: #FEE2E2;
+      color: #D9534F;
+    }
+
+    .btn-reject:hover {
+      background: #D9534F;
+      color: #FAF9F6;
+    }
+
+    .btn-review {
+      background: #DBEAFE;
+      color: #183A2D;
+    }
+
+    .btn-review:hover {
+      background: #183A2D;
+      color: #FAF9F6;
+    }
+
+    /* ----- empty states ----- */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #9CA3AF;
+      font-size: 15px;
+      background: #FFFFFF;
+      border-radius: 16px;
+      border: 1px solid #E5E7EB;
+    }
+
+    .empty-state .icon {
+      font-size: 48px;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #9CA3AF;
+    }
+
+    /* ----- footer ----- */
+    .footer {
+      margin-top: 48px;
+      padding: 24px 32px;
+      text-align: center;
+      border-top: 1px solid #E5E7EB;
+      background: #FFFFFF;
+    }
+
+    .footer-content {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #6B7280;
+    }
+
+    .footer-content .afristay {
+      font-weight: 700;
+      color: #183A2D;
+    }
+
+    .footer-content .afristay span {
+      color: #C8A86B;
+    }
+
+    /* ----- responsive ----- */
+    @media (max-width: 768px) {
+      .navbar {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+      }
+
+      .logo-text {
+        font-size: 1.4rem;
+      }
+
+      .logo-image {
+        height: 32px;
+      }
+
+      main {
+        padding: 16px;
+      }
+
+      .hotel-card {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        padding: 16px;
+      }
+
+      .hotel-actions {
+        justify-content: center;
+        margin-top: 8px;
+      }
+
+      .hotel-actions button {
+        flex: 1;
+        text-align: center;
+      }
+
+      .tab {
+        padding: 10px 16px;
+        font-size: 13px;
+      }
+
+      .footer {
+        padding: 16px;
+      }
+
+      .footer-content {
+        font-size: 12px;
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .navbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .nav-right {
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      .nav-user {
+        font-size: 12px;
+      }
+
+      .btn-logout {
+        font-size: 12px;
+        padding: 6px 14px;
+      }
+
+      .tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        gap: 0;
+      }
+
+      .tab {
+        white-space: nowrap;
+        padding: 8px 14px;
+        font-size: 12px;
+      }
+
+      .tab .count {
+        font-size: 10px;
+        padding: 0 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== STICKY NAVIGATION ===== -->
+  <nav class="navbar">
+    <a href="#" class="logo-link" id="logoLink">
+      <!-- === REPLACE THE SRC BELOW WITH YOUR ACTUAL LOGO IMAGE URL === -->
+      <img 
+        src="chatgpt image jul 29, 2026, 01_06_15 pm.png" 
+        alt="Afristay Logo" 
+        class="logo-image" 
+        id="logoImage"
+      />
+      <span class="logo-text">AFRI<span>STAY</span></span>
+    </a>
+
+    <div class="nav-right">
+      <div class="nav-user">Admin <span>• Platform</span></div>
+      <button class="btn-logout" onclick="logout()">Log Out</button>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main>
+    <div class="tabs" id="tabContainer">
+      <div class="tab active" data-status="pending">
+        Pending Review
+        <span class="count" id="pendingCount">0</span>
+      </div>
+      <div class="tab" data-status="approved">
+        Approved
+        <span class="count" id="approvedCount">0</span>
+      </div>
+      <div class="tab" data-status="rejected">
+        Rejected
+        <span class="count" id="rejectedCount">0</span>
+      </div>
+    </div>
+
+    <div class="hotel-grid" id="hotelGrid">
+      <div class="loading">Loading hotels...</div>
+    </div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer-content">
+      <span>Powered by</span>
+      <span class="afristay">AFRI<span>STAY</span></span>
+      <span>• Hotel Management Platform</span>
+    </div>
+  </footer>
+
+  <script src="js/supabase-config.js"></script>
+  <script>
+    // ---- Logo image handler ----
+    const logoImage = document.getElementById('logoImage');
+    const logoLink = document.getElementById('logoLink');
+
+    if (logoImage) {
+      logoImage.addEventListener('load', function() {
+        logoLink.classList.add('has-image');
+      });
+      logoImage.addEventListener('error', function() {
+        logoLink.classList.remove('has-image');
+        this.style.display = 'none';
+      });
+      if (logoImage.complete && logoImage.naturalWidth > 0) {
+        logoLink.classList.add('has-image');
+      }
+    }
+
+    let currentFilter = "pending";
+
+    async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const { data: adminRecord } = await supabaseClient
+        .from("platform_admins")
+        .select("id")
+        .eq("auth_user_id", session.user.id)
+        .single();
+
+      if (!adminRecord) {
+        await supabaseClient.auth.signOut();
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      await updateCounts();
+      await loadHotels();
+    }
+
+    // ----- Tabs -----
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        currentFilter = tab.dataset.status;
+        loadHotels();
+      });
+    });
+
+    // ----- Update counts -----
+    async function updateCounts() {
+      const { data: pending } = await supabaseClient
+        .from("hotels")
+        .select("id", { count: "exact", head: true })
+        .eq("approval_status", "pending");
+
+      const { data: approved } = await supabaseClient
+        .from("hotels")
+        .select("id", { count: "exact", head: true })
+        .eq("approval_status", "approved");
+
+      const { data: rejected } = await supabaseClient
+        .from("hotels")
+        .select("id", { count: "exact", head: true })
+        .eq("approval_status", "rejected");
+
+      document.getElementById("pendingCount").textContent = pending?.count || 0;
+      document.getElementById("approvedCount").textContent = approved?.count || 0;
+      document.getElementById("rejectedCount").textContent = rejected?.count || 0;
+    }
+
+    // ----- Load hotels -----
+    async function loadHotels() {
+      const grid = document.getElementById("hotelGrid");
+      grid.innerHTML = `<div class="loading">Loading hotels...</div>`;
+
+      const { data: hotels, error } = await supabaseClient
+        .from("hotels")
+        .select("*")
+        .eq("approval_status", currentFilter)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        grid.innerHTML = `<div class="empty-state">Error loading hotels.</div>`;
+        return;
+      }
+
+      if (!hotels.length) {
+        const icons = {
+          pending: "⏳",
+          approved: "✅",
+          rejected: "❌"
+        };
+        const messages = {
+          pending: "No hotels waiting for review.",
+          approved: "No approved hotels yet.",
+          rejected: "No rejected hotels."
+        };
+        grid.innerHTML = `
+          <div class="empty-state">
+            <span class="icon">${icons[currentFilter] || "🏨"}</span>
+            ${messages[currentFilter] || "No hotels found."}
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = hotels.map(h => `
+        <div class="hotel-card">
+          <div class="hotel-info">
+            <div class="name">${h.name}</div>
+            <div class="meta">
+              ${h.city || "—"}
+              <span class="separator">•</span>
+              ${h.address || "—"}
+              <span class="separator">•</span>
+              ${h.phone || "—"}
+            </div>
+            <div class="badge-wrap">
+              <span class="badge ${h.approval_status}">${capitalize(h.approval_status)}</span>
+            </div>
+          </div>
+          <div class="hotel-actions">
+            ${h.approval_status === "pending" ? `
+              <button class="btn-approve" onclick="setStatus('${h.id}', 'approved')">Approve</button>
+              <button class="btn-reject" onclick="setStatus('${h.id}', 'rejected')">Reject</button>
+            ` : ""}
+            ${h.approval_status === "approved" ? `
+              <button class="btn-review" onclick="setStatus('${h.id}', 'pending')">Move to Pending</button>
+              <button class="btn-reject" onclick="setStatus('${h.id}', 'rejected')">Reject</button>
+            ` : ""}
+            ${h.approval_status === "rejected" ? `
+              <button class="btn-review" onclick="setStatus('${h.id}', 'pending')">Move to Pending</button>
+              <button class="btn-approve" onclick="setStatus('${h.id}', 'approved')">Approve</button>
+            ` : ""}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // ----- Set status -----
+    async function setStatus(hotelId, newStatus) {
+      const statusLabels = {
+        pending: "pending review",
+        approved: "approved",
+        rejected: "rejected"
+      };
+      if (!confirm(`Mark this hotel as ${statusLabels[newStatus] || newStatus}?`)) return;
+
+      const { error } = await supabaseClient.rpc("set_hotel_approval", {
+        p_hotel_id: hotelId,
+        p_new_status: newStatus,
+      });
+
+      if (error) {
+        alert("Failed to update: " + error.message);
+        return;
+      }
+
+      await updateCounts();
+      await loadHotels();
+    }
+
+    // ----- Helpers -----
+    function capitalize(str) {
+      if (!str) return "";
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    async function logout() {
+      if (!confirm("Log out of your admin account?")) return;
+      await supabaseClient.auth.signOut();
+      window.location.href = "admin-login.html";
+    }
+
+    init();
+  </script>
+
+</body>
+</html>
