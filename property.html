@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Property Details — Afristay</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================
+       TOKENS — calm, premium
+       ============================================ */
+    :root {
+      --forest: #1e4d3a;
+      --forest-deep: #14382a;
+      --forest-light: #2a5f4a;
+      --cream: #FAF9F6;
+      --sage: #F2F0EB;
+      --gold: #C8A86B;
+      --gold-deep: #b59754;
+      --gold-soft: rgba(200, 168, 107, 0.10);
+      --ink: #2c3e3a;
+      --slate: #7a8a85;
+      --line: #e8e5df;
+      --white: #FFFFFF;
+      --shadow-sm: 0 2px 8px rgba(30, 77, 58, 0.04);
+      --shadow-md: 0 6px 24px rgba(30, 77, 58, 0.06);
+      --shadow-lg: 0 20px 56px rgba(30, 77, 58, 0.08);
+      --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 400;
+      background: var(--cream);
+      color: var(--ink);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+    .serif { font-family: 'Cormorant Garamond', serif; font-weight: 400; letter-spacing: -0.01em; color: var(--forest); }
+
+    /* ============================================
+       BUTTONS
+       ============================================ */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 28px; border-radius: 100px;
+      font-weight: 500; font-size: 13.5px;
+      text-decoration: none; transition: all 0.4s var(--ease);
+      cursor: pointer; border: none;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.2px;
+    }
+    .btn-primary {
+      background: var(--forest);
+      color: var(--cream);
+      box-shadow: 0 2px 16px rgba(30, 77, 58, 0.12);
+    }
+    .btn-primary:hover {
+      background: var(--forest-deep);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(30, 77, 58, 0.18);
+    }
+    .btn-whatsapp {
+      background: #25D366;
+      color: var(--white);
+      box-shadow: 0 2px 16px rgba(37, 211, 102, 0.2);
+    }
+    .btn-whatsapp:hover {
+      background: #1da851;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(37, 211, 102, 0.3);
+    }
+
+    /* ============================================
+       NAVBAR
+       ============================================ */
+    .navbar {
+      position: sticky; top: 0; z-index: 1000;
+      background: rgba(250, 249, 246, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(232, 229, 223, 0.4);
+      padding: 12px 0;
+    }
+    .navbar .container { display: flex; align-items: center; justify-content: space-between; }
+
+    .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .logo-icon {
+      height: 26px; width: 26px; object-fit: contain;
+      opacity: 0.85;
+    }
+    .logo-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem; font-weight: 400;
+      color: var(--forest);
+      letter-spacing: 0.02em;
+    }
+    .logo-text span { color: var(--gold-deep); font-weight: 500; }
+
+    .back-link {
+      color: var(--slate);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 400;
+      transition: color 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .back-link:hover { color: var(--forest); }
+
+    /* ============================================
+       MAIN CONTENT
+       ============================================ */
+    main { padding: 32px 0 80px; }
+
+    .loading, .error-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--slate);
+      font-weight: 300;
+    }
+
+    /* ============================================
+       IMAGE GALLERY CAROUSEL
+       ============================================ */
+    .gallery-wrapper {
+      position: relative;
+      margin-bottom: 28px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--sage);
+    }
+
+    .gallery-scroll {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+      gap: 0;
+    }
+    .gallery-scroll::-webkit-scrollbar {
+      height: 4px;
+    }
+    .gallery-scroll::-webkit-scrollbar-track {
+      background: var(--line);
+      border-radius: 4px;
+    }
+    .gallery-scroll::-webkit-scrollbar-thumb {
+      background: var(--gold);
+      border-radius: 4px;
+    }
+
+    .gallery-scroll .slide {
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      aspect-ratio: 16/9;
+      min-height: 300px;
+      max-height: 500px;
+      background: var(--sage);
+      position: relative;
+    }
+    .gallery-scroll .slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Image counter */
+    .gallery-counter {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(0, 0, 0, 0.6);
+      color: var(--white);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 20px;
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Thumbnail navigation */
+    .gallery-thumbs {
+      display: flex;
+      gap: 6px;
+      padding: 10px 0 4px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+    .gallery-thumbs::-webkit-scrollbar {
+      height: 2px;
+    }
+    .gallery-thumbs::-webkit-scrollbar-track {
+      background: var(--line);
+      border-radius: 4px;
+    }
+    .gallery-thumbs::-webkit-scrollbar-thumb {
+      background: var(--gold);
+      border-radius: 4px;
+    }
+
+    .gallery-thumbs .thumb {
+      flex: 0 0 80px;
+      height: 56px;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.3s var(--ease);
+      opacity: 0.6;
+    }
+    .gallery-thumbs .thumb:hover {
+      opacity: 0.9;
+      border-color: var(--gold-soft);
+    }
+    .gallery-thumbs .thumb.active {
+      opacity: 1;
+      border-color: var(--gold);
+    }
+    .gallery-thumbs .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .gallery-empty {
+      height: 300px;
+      background: var(--sage);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #bbb;
+      font-size: 14px;
+      font-weight: 300;
+      margin-bottom: 28px;
+      border: 1px solid var(--line);
+    }
+
+    /* ============================================
+       PROPERTY HEADER
+       ============================================ */
+    .prop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .prop-header h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: 2rem;
+      color: var(--forest);
+      letter-spacing: -0.01em;
+      margin-bottom: 2px;
+    }
+    .prop-header .loc {
+      font-size: 14px;
+      color: var(--slate);
+      font-weight: 300;
+    }
+    .prop-type-badge {
+      background: var(--sage);
+      color: var(--forest);
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 16px;
+      border-radius: 20px;
+      white-space: nowrap;
+      border: 1px solid var(--line);
+    }
+
+    .prop-description {
+      font-size: 14.5px;
+      color: var(--slate);
+      line-height: 1.85;
+      margin-bottom: 28px;
+      max-width: 700px;
+      font-weight: 300;
+    }
+
+    /* ============================================
+       AMENITIES
+       ============================================ */
+    .amenities-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 36px;
+    }
+    .amenity-chip {
+      background: var(--white);
+      border: 1px solid var(--line);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      color: var(--slate);
+      font-weight: 400;
+      transition: border-color 0.3s;
+    }
+    .amenity-chip:hover { border-color: var(--gold); }
+
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: 1.5rem;
+      color: var(--forest);
+      margin-bottom: 16px;
+      letter-spacing: 0.02em;
+    }
+
+    /* ============================================
+       ROOMS
+       ============================================ */
+    .room-card {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: 140px 1fr auto;
+      gap: 18px;
+      align-items: center;
+      margin-bottom: 14px;
+      transition: all 0.3s var(--ease);
+    }
+    .room-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--gold-soft);
+    }
+
+    .room-card .room-img {
+      width: 140px;
+      height: 110px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: var(--sage);
+    }
+
+    .room-card .room-name {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--forest);
+      margin-bottom: 2px;
+    }
+    .room-card .room-meta {
+      font-size: 12.5px;
+      color: var(--slate);
+      font-weight: 300;
+      margin-bottom: 6px;
+    }
+    .room-card .room-amenities {
+      font-size: 12px;
+      color: var(--slate);
+      font-weight: 300;
+    }
+
+    .room-card .room-price {
+      text-align: right;
+      min-width: 130px;
+    }
+    .room-card .price-val {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--forest);
+    }
+    .room-card .price-strike {
+      font-size: 12px;
+      color: #bbb;
+      text-decoration: line-through;
+      font-weight: 300;
+    }
+    .room-card .btn-book {
+      background: var(--forest);
+      color: var(--cream);
+      border: none;
+      padding: 10px 24px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 10px;
+      white-space: nowrap;
+      transition: all 0.3s var(--ease);
+      box-shadow: 0 2px 12px rgba(30, 77, 58, 0.12);
+    }
+    .room-card .btn-book:hover {
+      background: var(--forest-deep);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(30, 77, 58, 0.2);
+    }
+
+    /* ============================================
+       MODAL
+       ============================================ */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 43, 33, 0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+      backdrop-filter: blur(6px);
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--white);
+      border-radius: 18px;
+      padding: 32px;
+      width: 100%;
+      max-width: 460px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.35s var(--ease);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-lg);
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: 1.5rem;
+      color: var(--forest);
+      margin-bottom: 2px;
+    }
+    .modal .modal-sub {
+      font-size: 13px;
+      color: var(--slate);
+      font-weight: 300;
+      margin-bottom: 18px;
+    }
+
+    .modal label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 5px;
+      margin-top: 16px;
+      letter-spacing: 0.2px;
+    }
+    .modal input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 13.5px;
+      background: var(--sage);
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .modal input:focus {
+      outline: none;
+      border-color: var(--gold);
+      background: var(--white);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .modal-actions button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s var(--ease);
+    }
+    .btn-cancel {
+      background: var(--sage);
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+    .btn-cancel:hover { background: var(--line); }
+    .btn-confirm {
+      background: var(--forest);
+      color: var(--cream);
+      border: none;
+      box-shadow: 0 2px 12px rgba(30, 77, 58, 0.12);
+    }
+    .btn-confirm:hover {
+      background: var(--forest-deep);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(30, 77, 58, 0.2);
+    }
+
+    .error-msg {
+      color: #D9534F;
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+      background: #FDE8E7;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border-left: 3px solid #D9534F;
+    }
+
+    /* ============================================
+       CONFIRMATION
+       ============================================ */
+    .confirm-screen {
+      text-align: center;
+      padding: 8px 0;
+    }
+    .confirm-screen .icon {
+      font-size: 44px;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .confirm-screen h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: 1.5rem;
+      color: var(--forest);
+      margin-bottom: 4px;
+    }
+    .confirm-screen p {
+      color: var(--slate);
+      font-size: 14px;
+      font-weight: 300;
+      margin-bottom: 4px;
+    }
+    .confirm-screen .highlight {
+      font-weight: 500;
+      color: var(--forest);
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 768px) {
+      .gallery-scroll .slide {
+        min-height: 220px;
+        max-height: 400px;
+      }
+      .gallery-thumbs .thumb {
+        flex: 0 0 60px;
+        height: 44px;
+      }
+
+      .room-card {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .room-card .room-img {
+        width: 100%;
+        height: 160px;
+      }
+      .room-card .room-price {
+        text-align: left;
+        min-width: auto;
+      }
+      .prop-header h1 {
+        font-size: 1.6rem;
+      }
+      .modal {
+        padding: 24px;
+        margin: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .prop-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .gallery-scroll .slide {
+        min-height: 180px;
+        max-height: 300px;
+      }
+      .gallery-thumbs .thumb {
+        flex: 0 0 50px;
+        height: 36px;
+      }
+      .room-card .btn-book {
+        width: 100%;
+        text-align: center;
+      }
+      .gallery-counter {
+        font-size: 10px;
+        padding: 2px 10px;
+        bottom: 10px;
+        right: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="explore.html" class="logo">
+        <img src="ChatGPT Image Jul 29, 2026, 01_06_15 PM.png" alt="Afristay" class="logo-icon" onerror="this.style.display='none';">
+        <span class="logo-text">AFRI<span>STAY</span></span>
+      </a>
+      <a href="explore.html" class="back-link">← Back to search</a>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="container" id="mainContent">
+    <div class="loading">Loading property...</div>
+  </main>
+
+  <!-- ===== BOOKING MODAL ===== -->
+  <div class="modal-overlay" id="bookingModalOverlay">
+    <div class="modal" id="modalContent">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <script src="js/supabase-config.js"></script>
+  <script>
+    let hotelId = null;
+    let hotelInfo = null;
+    let selectedRoom = null;
+
+    // ============================================
+    // CHECK SUPABASE CLIENT
+    // ============================================
+    function getSupabase() {
+      if (typeof supabaseClient !== 'undefined') {
+        return supabaseClient;
+      }
+      console.error('Supabase client not found!');
+      return null;
+    }
+
+    // ============================================
+    // INIT
+    // ============================================
+    async function init() {
+      const sb = getSupabase();
+      if (!sb) {
+        document.getElementById("mainContent").innerHTML = `<div class="error-state">⚠️ Database connection error. Please refresh.</div>`;
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      hotelId = params.get("hotel");
+
+      if (!hotelId) {
+        document.getElementById("mainContent").innerHTML = `<div class="error-state">No property specified.</div>`;
+        return;
+      }
+
+      try {
+        const { data: hotel, error } = await sb
+          .from("hotels")
+          .select("*")
+          .eq("id", hotelId)
+          .eq("approval_status", "approved")
+          .single();
+
+        if (error || !hotel) {
+          document.getElementById("mainContent").innerHTML = `<div class="error-state">This property isn't available.</div>`;
+          return;
+        }
+
+        hotelInfo = hotel;
+
+        const { data: rooms } = await sb
+          .from("rooms")
+          .select("*")
+          .eq("hotel_id", hotelId)
+          .neq("status", "maintenance")
+          .order("rate_per_night");
+
+        render(hotel, rooms || []);
+      } catch (error) {
+        console.error('Error loading property:', error);
+        document.getElementById("mainContent").innerHTML = `<div class="error-state">Something went wrong loading this property.</div>`;
+      }
+    }
+
+    // ============================================
+    // RENDER
+    // ============================================
+    function render(hotel, rooms) {
+      document.title = `${hotel.name} — Afristay`;
+
+      // Gallery - collect all photos
+      const allPhotos = [...(hotel.gallery_urls || []), ...rooms.flatMap(r => r.gallery_urls || [])].filter(Boolean);
+
+      let galleryHtml = '';
+      if (allPhotos.length) {
+        const counterHtml = allPhotos.length > 1 ? `<span class="gallery-counter">${allPhotos.length} photos</span>` : '';
+
+        galleryHtml = `
+          <div class="gallery-wrapper">
+            <div class="gallery-scroll" id="galleryScroll">
+              ${allPhotos.map((url, index) => `
+                <div class="slide" data-index="${index}">
+                  <img src="${url}" alt="${hotel.name} - photo ${index + 1}" loading="lazy" />
+                </div>
+              `).join('')}
+              ${counterHtml}
+            </div>
+            ${allPhotos.length > 1 ? `
+              <div class="gallery-thumbs" id="galleryThumbs">
+                ${allPhotos.map((url, index) => `
+                  <div class="thumb ${index === 0 ? 'active' : ''}" data-index="${index}" onclick="scrollToSlide(${index})">
+                    <img src="${url}" alt="Thumbnail ${index + 1}" loading="lazy" />
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      } else {
+        galleryHtml = `<div class="gallery-empty">No photos uploaded yet</div>`;
+      }
+
+      // Amenities
+      const amenitiesHtml = (hotel.amenities || []).length ? `
+        <div class="section-title">Amenities</div>
+        <div class="amenities-grid">${hotel.amenities.map(a => `<span class="amenity-chip">${a}</span>`).join("")}</div>
+      ` : "";
+
+      // Rooms
+      const roomsHtml = rooms.length ? rooms.map(r => renderRoomCard(r)).join("") : `<div class="loading">No rooms/units listed yet.</div>`;
+
+      document.getElementById("mainContent").innerHTML = `
+        ${galleryHtml}
+        <div class="prop-header">
+          <div>
+            <h1>${hotel.name}</h1>
+            <div class="loc">${hotel.address ? hotel.address + ", " : ""}${hotel.city || ""}</div>
+          </div>
+          <span class="prop-type-badge">${capitalize(hotel.property_type)}</span>
+        </div>
+        ${hotel.short_description ? `<p class="prop-description">${hotel.short_description}</p>` : ""}
+        ${amenitiesHtml}
+        <div class="section-title">Rooms &amp; Units</div>
+        <div id="roomsList">${roomsHtml}</div>
+      `;
+
+      // Setup scroll sync between gallery and thumbs
+      if (allPhotos.length > 1) {
+        setupGalleryScrollSync(allPhotos.length);
+      }
+    }
+
+    // ============================================
+    // GALLERY SCROLL SYNC
+    // ============================================
+    function setupGalleryScrollSync(totalSlides) {
+      const scrollContainer = document.getElementById('galleryScroll');
+      const thumbs = document.querySelectorAll('.thumb');
+
+      if (!scrollContainer) return;
+
+      let isScrolling = false;
+
+      // Update active thumb on scroll
+      scrollContainer.addEventListener('scroll', () => {
+        if (isScrolling) return;
+        const slideWidth = scrollContainer.querySelector('.slide')?.offsetWidth || 0;
+        const scrollPosition = scrollContainer.scrollLeft;
+        const activeIndex = Math.round(scrollPosition / slideWidth);
+
+        thumbs.forEach((thumb, index) => {
+          thumb.classList.toggle('active', index === activeIndex);
+        });
+
+        // Scroll thumb into view
+        const activeThumb = thumbs[activeIndex];
+        if (activeThumb) {
+          activeThumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      });
+
+      // Smooth scroll to slide
+      window.scrollToSlide = function(index) {
+        isScrolling = true;
+        const slideWidth = scrollContainer.querySelector('.slide')?.offsetWidth || 0;
+        scrollContainer.scrollTo({ left: index * slideWidth, behavior: 'smooth' });
+
+        thumbs.forEach((thumb, i) => {
+          thumb.classList.toggle('active', i === index);
+        });
+
+        setTimeout(() => { isScrolling = false; }, 400);
+      };
+    }
+
+    // ============================================
+    // ROOM CARD
+    // ============================================
+    function renderRoomCard(room) {
+      const image = (room.gallery_urls || [])[0] || room.cover_image_url || "";
+      const hasOffer = !!room.special_offer_price;
+      const displayPrice = hasOffer ? room.special_offer_price : room.rate_per_night;
+
+      const metaParts = [];
+      if (room.max_guests) metaParts.push(`${room.max_guests} guests`);
+      if (room.bedrooms) metaParts.push(`${room.bedrooms} bed${room.bedrooms > 1 ? 's' : ''}`);
+      if (room.bathrooms) metaParts.push(`${room.bathrooms} bath${room.bathrooms > 1 ? 's' : ''}`);
+
+      return `
+        <div class="room-card">
+          ${image ? `<img class="room-img" src="${image}" alt="${room.room_number}" onerror="this.style.display='none';">` : `<div class="room-img" style="display:flex;align-items:center;justify-content:center;color:#bbb;font-size:11px;">No photo</div>`}
+          <div>
+            <div class="room-name">${room.room_number}</div>
+            <div class="room-meta">${capitalize(room.room_type.replace("_", " "))}${metaParts.length ? " • " + metaParts.join(" • ") : ""}</div>
+            ${room.description ? `<div class="room-meta">${room.description}</div>` : ""}
+            ${(room.amenities || []).length ? `<div class="room-amenities">${room.amenities.join(", ")}</div>` : ""}
+          </div>
+          <div class="room-price">
+            ${hasOffer ? `<div class="price-strike">₦${Number(room.rate_per_night).toLocaleString()}</div>` : ""}
+            <div class="price-val">₦${Number(displayPrice).toLocaleString()}</div>
+            <div style="font-size:11px;color:var(--slate);font-weight:300;">/ night</div>
+            <button class="btn-book" onclick='openBookingModal(${JSON.stringify(room)})'>Book</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ============================================
+    // BOOKING MODAL
+    // ============================================
+    function openBookingModal(room) {
+      selectedRoom = room;
+      const today = new Date().toISOString().split("T")[0];
+      const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+
+      document.getElementById("modalContent").innerHTML = `
+        <h3>Book ${room.room_number}</h3>
+        <p class="modal-sub">₦${Number(room.special_offer_price || room.rate_per_night).toLocaleString()} / night</p>
+        <form id="bookingForm">
+          <label>Check-in</label>
+          <input type="date" id="bookCheckIn" value="${today}" min="${today}" required>
+          <label>Check-out</label>
+          <input type="date" id="bookCheckOut" value="${tomorrow}" min="${tomorrow}" required>
+          <label>Full Name</label>
+          <input type="text" id="bookName" required placeholder="e.g. John Doe">
+          <label>Phone Number (WhatsApp)</label>
+          <input type="tel" id="bookPhone" required placeholder="080...">
+          <label>Email (optional)</label>
+          <input type="email" id="bookEmail" placeholder="you@example.com">
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeBookingModal()">Cancel</button>
+            <button type="submit" class="btn-confirm">Request Booking</button>
+          </div>
+          <p class="error-msg" id="bookingError"></p>
+        </form>
+      `;
+
+      document.getElementById("bookingForm").addEventListener("submit", submitBooking);
+      document.getElementById("bookingModalOverlay").classList.add("open");
+    }
+
+    function closeBookingModal() {
+      document.getElementById("bookingModalOverlay").classList.remove("open");
+      selectedRoom = null;
+    }
+
+    // ============================================
+    // SUBMIT BOOKING
+    // ============================================
+    async function submitBooking(e) {
+      e.preventDefault();
+      const errorMsg = document.getElementById("bookingError");
+      errorMsg.style.display = "none";
+
+      const checkIn = document.getElementById("bookCheckIn").value;
+      const checkOut = document.getElementById("bookCheckOut").value;
+      const name = document.getElementById("bookName").value.trim();
+      const phone = document.getElementById("bookPhone").value.trim();
+      const email = document.getElementById("bookEmail").value.trim() || null;
+
+      if (checkOut <= checkIn) {
+        errorMsg.textContent = "Check-out must be after check-in.";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      const sb = getSupabase();
+      if (!sb) {
+        errorMsg.textContent = "Database connection error. Please try again.";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      try {
+        const { data, error } = await sb.rpc("create_guest_booking", {
+          p_hotel_id: hotelId,
+          p_room_id: selectedRoom.id,
+          p_check_in: checkIn,
+          p_check_out: checkOut,
+          p_guest_name: name,
+          p_guest_phone: phone,
+          p_guest_email: email,
+        });
+
+        if (error) throw error;
+        showConfirmation(data, name);
+
+      } catch (err) {
+        errorMsg.textContent = err.message || "Failed to create booking. Please try again.";
+        errorMsg.style.display = "block";
+      }
+    }
+
+    // ============================================
+    // CONFIRMATION
+    // ============================================
+    function showConfirmation(data, guestName) {
+      const hotelPhone = hotelInfo?.phone?.replace(/\D/g, "");
+      let waLink = "#";
+      if (hotelPhone) {
+        const clean = hotelPhone.startsWith("0") ? "234" + hotelPhone.slice(1) : hotelPhone;
+        const message = `Hello, I just requested a booking online for ${selectedRoom.room_number} (${data.nights} night${data.nights > 1 ? "s" : ""}), total ₦${Number(data.total).toLocaleString()}. My name is ${guestName}. Please confirm and let me know how to pay.`;
+        waLink = `https://wa.me/${clean}?text=${encodeURIComponent(message)}`;
+      }
+
+      document.getElementById("modalContent").innerHTML = `
+        <div class="confirm-screen">
+          <span class="icon">✅</span>
+          <h3>Booking Requested!</h3>
+          <p><span class="highlight">${data.room_number}</span> • ${data.nights} night${data.nights > 1 ? "s" : ""}</p>
+          <p>Total: <span class="highlight">₦${Number(data.total).toLocaleString()}</span></p>
+          <p style="margin-top:12px;">Your booking is <span class="highlight">pending confirmation</span>. The property will reach out to arrange payment.</p>
+          ${hotelPhone ? `<a class="btn btn-whatsapp" href="${waLink}" target="_blank" style="margin-top:16px;">💬 Message on WhatsApp</a>` : ""}
+          <div class="modal-actions" style="margin-top:20px;">
+            <button class="btn-cancel" style="flex:1;" onclick="closeBookingModal()">Close</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ============================================
+    // HELPERS
+    // ============================================
+    function capitalize(str) {
+      if (!str) return "";
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    // ============================================
+    // START
+    // ============================================
+    init();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Afristay — Find Hotels &amp; Apartments Across Africa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ============================================
+       TOKENS — softer, calmer
+       ============================================ */
+    :root {
+      --forest: #1e4d3a;
+      --forest-deep: #14382a;
+      --forest-light: #2a5f4a;
+      --cream: #FAF9F6;
+      --sage: #F2F0EB;
+      --gold: #C8A86B;
+      --gold-deep: #b59754;
+      --gold-soft: rgba(200, 168, 107, 0.10);
+      --ink: #2c3e3a;
+      --slate: #7a8a85;
+      --line: #e8e5df;
+      --white: #FFFFFF;
+      --shadow-sm: 0 2px 8px rgba(30, 77, 58, 0.04);
+      --shadow-md: 0 6px 24px rgba(30, 77, 58, 0.06);
+      --shadow-lg: 0 20px 56px rgba(30, 77, 58, 0.08);
+      --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 400;
+      background: var(--cream);
+      color: var(--ink);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+    .serif { font-family: 'Cormorant Garamond', serif; font-weight: 400; letter-spacing: -0.01em; color: var(--forest); }
+    .serif-medium { font-family: 'Cormorant Garamond', serif; font-weight: 500; letter-spacing: -0.01em; color: var(--forest); }
+
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-size: 10px; font-weight: 500; text-transform: uppercase;
+      letter-spacing: 2.8px; color: var(--gold-deep);
+      margin-bottom: 12px;
+    }
+    .eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--gold); }
+
+    /* ============================================
+       BUTTONS — lighter touch
+       ============================================ */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 28px; border-radius: 100px;
+      font-weight: 500; font-size: 13.5px;
+      text-decoration: none; transition: all 0.4s var(--ease);
+      cursor: pointer; border: none;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.2px;
+    }
+    .btn-primary {
+      background: var(--forest);
+      color: var(--cream);
+      box-shadow: 0 2px 16px rgba(30, 77, 58, 0.12);
+    }
+    .btn-primary:hover {
+      background: var(--forest-deep);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(30, 77, 58, 0.18);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--forest);
+      border: 1px solid var(--line);
+    }
+    .btn-secondary:hover {
+      background: var(--sage);
+      border-color: var(--gold);
+      transform: translateY(-2px);
+    }
+    .btn-gold {
+      background: var(--gold);
+      color: var(--white);
+      box-shadow: 0 2px 16px rgba(200, 168, 107, 0.15);
+    }
+    .btn-gold:hover {
+      background: var(--gold-deep);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(200, 168, 107, 0.25);
+    }
+
+    /* ============================================
+       NAVBAR — lighter
+       ============================================ */
+    .navbar {
+      position: sticky; top: 0; z-index: 1000;
+      background: rgba(250, 249, 246, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(232, 229, 223, 0.4);
+      padding: 12px 0;
+    }
+    .navbar .container { display: flex; align-items: center; justify-content: space-between; }
+
+    .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .logo-icon {
+      height: 26px; width: 26px; object-fit: contain;
+      opacity: 0.85;
+    }
+    .logo-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem; font-weight: 400;
+      color: var(--forest);
+      letter-spacing: 0.02em;
+    }
+    .logo-text span { color: var(--gold-deep); font-weight: 500; }
+
+    .nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+    .nav-links a {
+      text-decoration: none;
+      color: var(--slate);
+      font-weight: 400;
+      font-size: 13px;
+      transition: color 0.3s;
+      letter-spacing: 0.3px;
+    }
+    .nav-links a:hover { color: var(--forest); }
+
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+    .nav-actions .btn { padding: 8px 20px; font-size: 12.5px; }
+    .btn-login {
+      background: transparent;
+      color: var(--slate);
+      border: none;
+      font-weight: 400;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 8px 14px;
+      transition: color 0.3s;
+    }
+    .btn-login:hover { color: var(--forest); }
+
+    .mobile-toggle { display: none; flex-direction: column; gap: 4px; cursor: pointer; padding: 4px; background: none; border: none; }
+    .mobile-toggle span { width: 22px; height: 1.5px; background: var(--forest); border-radius: 2px; transition: all 0.3s var(--ease); }
+
+    /* ============================================
+       HERO SEARCH — with logo watermark
+       ============================================ */
+    .hero-search {
+      background: var(--forest);
+      padding: 48px 0 56px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-watermark {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 1100px;
+      max-width: 150%;
+      aspect-ratio: 1;
+      background-image: url('ChatGPT Image Jul 29, 2026, 01_06_15 PM.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      opacity: 0.55;
+      filter: grayscale(1) brightness(0.3) sepia(1) hue-rotate(70deg) saturate(2.5);
+      -webkit-mask-image: radial-gradient(circle at center, #000 35%, transparent 70%);
+      mask-image: radial-gradient(circle at center, #000 35%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-search::before {
+      content: '';
+      position: absolute; top: -20%; right: -5%;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(200,168,107,0.04) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .hero-search .container { position: relative; z-index: 1; }
+
+    .hero-search .eyebrow { color: var(--gold); }
+    .hero-search .eyebrow::before { background: var(--gold); }
+
+    .hero-search h1 {
+      color: var(--cream);
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      margin-bottom: 4px;
+      line-height: 1.15;
+      letter-spacing: 0.02em;
+    }
+    .hero-search .sub {
+      color: rgba(255,255,255,0.4);
+      font-size: 0.95rem;
+      font-weight: 300;
+      margin-bottom: 24px;
+    }
+
+    .search-panel {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 20px 24px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+      position: relative;
+      z-index: 2;
+    }
+    .search-row {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+    .search-row .field label {
+      display: block;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--slate);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .search-row select,
+    .search-row input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 13.5px;
+      background: var(--sage);
+      color: var(--ink);
+      transition: border-color 0.3s, background 0.3s;
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237A8A85' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      cursor: pointer;
+    }
+    .search-row select:focus,
+    .search-row input:focus {
+      outline: none;
+      border-color: var(--gold);
+      background: var(--white);
+    }
+
+    .btn-search {
+      background: var(--forest);
+      color: var(--cream);
+      border: none;
+      padding: 11px 28px;
+      border-radius: 10px;
+      font-weight: 500;
+      font-size: 13.5px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.4s var(--ease);
+      box-shadow: 0 2px 16px rgba(30, 77, 58, 0.15);
+      letter-spacing: 0.3px;
+    }
+    .btn-search:hover { background: var(--forest-deep); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(30, 77, 58, 0.2); }
+
+    /* ============================================
+       MAIN CONTENT
+       ============================================ */
+    main { padding: 40px 0 64px; }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 14px;
+    }
+    .section-header h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: 1.5rem;
+      color: var(--forest);
+      letter-spacing: 0.02em;
+    }
+    .section-header .sub {
+      font-size: 12.5px;
+      font-weight: 300;
+      color: var(--slate);
+    }
+
+    /* ============================================
+       CARDS — softer, more elegant
+       ============================================ */
+    .card-scroll {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding: 4px 2px 12px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .card-scroll::-webkit-scrollbar { height: 3px; }
+    .card-scroll::-webkit-scrollbar-track { background: var(--line); border-radius: 4px; }
+    .card-scroll::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; }
+
+    .card-scroll .property-card { flex: 0 0 250px; scroll-snap-align: start; }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 18px;
+    }
+
+    .property-card {
+      background: var(--white);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: all 0.4s var(--ease);
+      border: 1px solid var(--line);
+    }
+    .property-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--gold-soft);
+    }
+
+    .property-card .img-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: var(--sage);
+      overflow: hidden;
+    }
+    .property-card .img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s var(--ease);
+    }
+    .property-card:hover .img-wrap img { transform: scale(1.02); }
+
+    .property-card .badge-overlay {
+      position: absolute;
+      top: 10px; left: 10px;
+      background: rgba(30, 77, 58, 0.8);
+      color: var(--cream);
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    .property-card .offer-badge {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: var(--gold);
+      color: var(--white);
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 12px;
+      border-radius: 20px;
+    }
+
+    .property-card .info { padding: 14px 16px 16px; }
+    .property-card .name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--forest);
+      margin-bottom: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .property-card .loc {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--slate);
+      margin-bottom: 6px;
+    }
+    .property-card .price {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--forest);
+    }
+    .property-card .price span { font-size: 11px; font-weight: 400; color: var(--slate); }
+    .property-card .price .strike {
+      text-decoration: line-through;
+      color: #ccc;
+      font-weight: 400;
+      margin-right: 6px;
+      font-size: 12px;
+    }
+
+    .empty-state, .loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--slate);
+      font-size: 13px;
+      font-weight: 300;
+      background: var(--white);
+      border-radius: 12px;
+      border: 1px solid var(--line);
+    }
+
+    /* ============================================
+       RESULTS VIEW
+       ============================================ */
+    #resultsView { display: none; }
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .results-header h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: 1.5rem;
+      color: var(--forest);
+    }
+    .btn-back {
+      background: none;
+      border: none;
+      color: var(--slate);
+      font-size: 13px;
+      font-weight: 400;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 0;
+      transition: color 0.3s;
+    }
+    .btn-back:hover { color: var(--forest); }
+
+    /* ============================================
+       CTA DIVIDER — softer
+       ============================================ */
+    .cta-divider {
+      padding: 48px 0;
+      background: var(--white);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      text-align: center;
+    }
+    .cta-divider h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: 1.8rem;
+      color: var(--forest);
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+    .cta-divider p {
+      color: var(--slate);
+      font-size: 0.95rem;
+      font-weight: 300;
+      max-width: 440px;
+      margin: 0 auto 20px;
+    }
+    .cta-divider .btn { margin: 0 auto; }
+
+    /* ============================================
+       FOOTER — with logo
+       ============================================ */
+    .footer {
+      background: var(--forest-deep);
+      color: rgba(255,255,255,0.4);
+      padding: 40px 0 28px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .footer .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .footer-brand .logo-icon {
+      height: 28px;
+      width: 28px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+      opacity: 0.6;
+    }
+    .footer-brand .logo-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 400;
+      color: var(--cream);
+      letter-spacing: 0.02em;
+    }
+    .footer-brand .logo-text span { color: var(--gold); font-weight: 500; }
+    .footer-brand p { font-size: 12px; font-weight: 300; color: rgba(255,255,255,0.3); margin-top: 2px; }
+
+    .footer-links { display: flex; gap: 20px; flex-wrap: wrap; }
+    .footer-links a { color: rgba(255,255,255,0.35); text-decoration: none; font-size: 12.5px; font-weight: 300; transition: color 0.3s; }
+    .footer-links a:hover { color: var(--gold); }
+
+    .footer-bottom {
+      width: 100%;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      padding-top: 16px;
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 11.5px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.2);
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 1024px) {
+      .search-row { grid-template-columns: 1fr 1fr; }
+      .search-row .btn-search { grid-column: 1 / -1; }
+      .hero-watermark { width: 600px; opacity: 0.35; }
+    }
+
+    @media (max-width: 768px) {
+      .navbar .container { flex-wrap: wrap; gap: 10px; }
+      .nav-links { display: none; }
+      .nav-links.open {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 100%; left: 0; right: 0;
+        background: var(--white);
+        padding: 20px 24px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+        gap: 14px;
+        border-top: 1px solid var(--line);
+      }
+      .nav-actions { display: none; }
+      .nav-actions.open {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        padding: 12px 24px 20px;
+        background: var(--white);
+        border-top: 1px solid var(--line);
+        position: absolute;
+        top: 100%; left: 0; right: 0;
+      }
+      .mobile-toggle { display: flex; }
+      .hero-search { padding: 32px 0 40px; }
+      .hero-watermark { width: 450px; opacity: 0.25; transform: translate(-50%, -50%) scale(0.8); }
+      .search-panel { padding: 16px; }
+      .search-row { grid-template-columns: 1fr; gap: 8px; }
+      .search-row .btn-search { width: 100%; justify-content: center; }
+      .card-scroll .property-card { flex: 0 0 200px; }
+      .card-grid { grid-template-columns: 1fr 1fr; }
+      .footer .container { flex-direction: column; text-align: center; }
+      .footer-brand { flex-direction: column; text-align: center; }
+      .footer-bottom { flex-direction: column; text-align: center; }
+      .cta-divider h2 { font-size: 1.4rem; }
+    }
+
+    @media (max-width: 480px) {
+      .card-grid { grid-template-columns: 1fr; }
+      .card-scroll .property-card { flex: 0 0 100%; }
+      .hero-search h1 { font-size: 1.4rem; }
+      .hero-watermark { width: 300px; opacity: 0.15; transform: translate(-50%, -50%) scale(0.7);
+        -webkit-mask-image: radial-gradient(circle at center, #000 25%, transparent 75%);
+        mask-image: radial-gradient(circle at center, #000 25%, transparent 75%); }
+      .results-header { flex-direction: column; align-items: flex-start; }
+    }
+
+    @media (max-width: 400px) {
+      .hero-watermark { width: 220px; opacity: 0.10; transform: translate(-50%, -50%) scale(0.6); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="logo">
+        <img src="ChatGPT Image Jul 29, 2026, 01_06_15 PM.png" alt="Afristay" class="logo-icon" onerror="this.style.display='none';">
+        <span class="logo-text">AFRI<span>STAY</span></span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#discover">Discover</a></li>
+        <li><a href="#offers">Offers</a></li>
+        <li><a href="signup-hotel.html" style="color:var(--gold-deep);">List your property</a></li>
+      </ul>
+
+      <div class="nav-actions" id="navActions">
+        <a href="login.html" class="btn-login">Sign in</a>
+        <a href="#request" class="btn btn-primary" style="padding:7px 18px;font-size:12px;">Get started</a>
+      </div>
+
+      <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== HERO SEARCH ===== -->
+  <section class="hero-search" id="discover">
+    <div class="hero-watermark" aria-hidden="true"></div>
+
+    <div class="container">
+      <span class="eyebrow">Discover Africa</span>
+      <h1>Find hotels and apartments across Nigeria</h1>
+      <p class="sub">Handpicked stays for every kind of traveller</p>
+
+      <div class="search-panel">
+        <div class="search-row">
+          <div class="field">
+            <label>City</label>
+            <select id="citySelect">
+              <option value="">All cities</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Type</label>
+            <select id="typeSelect">
+              <option value="">Hotels &amp; Apartments</option>
+              <option value="hotel">Hotels</option>
+              <option value="apartment">Apartments</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Max price / night</label>
+            <select id="priceSelect">
+              <option value="">Any price</option>
+              <option value="20000">Under ₦20,000</option>
+              <option value="50000">Under ₦50,000</option>
+              <option value="100000">Under ₦100,000</option>
+            </select>
+          </div>
+          <button class="btn-search" onclick="runSearch()">Search stays</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="container">
+
+    <!-- HOMEPAGE CURATED VIEW -->
+    <div id="homeView">
+
+      <!-- Near You -->
+      <div class="section" id="nearYouSection" style="display:none;">
+        <div class="section-header">
+          <h2>Near you</h2>
+          <span class="sub">Properties close by</span>
+        </div>
+        <div class="card-scroll" id="nearYouCards"><div class="loading">Loading...</div></div>
+      </div>
+
+      <!-- Recommended -->
+      <div class="section">
+        <div class="section-header">
+          <h2>Recommended stays</h2>
+          <span class="sub">Handpicked for you</span>
+        </div>
+        <div class="card-scroll" id="recommendedCards"><div class="loading">Loading...</div></div>
+      </div>
+
+      <!-- Special Offers -->
+      <div class="section" id="offers">
+        <div class="section-header">
+          <h2>Special offers</h2>
+          <span class="sub">Limited time deals</span>
+        </div>
+        <div class="card-scroll" id="offersCards"><div class="loading">Loading...</div></div>
+      </div>
+
+      <!-- Budget-Friendly -->
+      <div class="section">
+        <div class="section-header">
+          <h2>Budget-friendly</h2>
+          <span class="sub">Great value stays</span>
+        </div>
+        <div class="card-scroll" id="budgetCards"><div class="loading">Loading...</div></div>
+      </div>
+
+      <!-- Recently Added -->
+      <div class="section">
+        <div class="section-header">
+          <h2>Recently added</h2>
+          <span class="sub">New properties</span>
+        </div>
+        <div class="card-scroll" id="recentCards"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- SEARCH RESULTS VIEW -->
+    <div id="resultsView">
+      <button class="btn-back" onclick="showHome()">← Back to browsing</button>
+      <div class="results-header">
+        <h2 id="resultsTitle">Results</h2>
+        <span class="sub" id="resultsCount" style="color:var(--slate);font-size:13px;"></span>
+      </div>
+      <div class="card-grid" id="resultsGrid"><div class="loading">Searching...</div></div>
+    </div>
+
+  </main>
+
+  <!-- ===== CTA DIVIDER ===== -->
+  <section class="cta-divider" id="request">
+    <div class="container">
+      <h2>Own a hotel or apartment?</h2>
+      <p>List your property on Afristay and start receiving bookings directly from guests across Nigeria.</p>
+      <a href="signup-hotel.html" class="btn btn-primary">List your property →</a>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-brand">
+        <img src="ChatGPT Image Jul 29, 2026, 01_06_15 PM.png" alt="Afristay" class="logo-icon" onerror="this.style.display='none';">
+        <div>
+          <span class="logo-text">AFRI<span>STAY</span></span>
+          <p>Discover Africa's finest stays</p>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="#discover">Discover</a>
+        <a href="#offers">Offers</a>
+        <a href="login.html">List your property</a>
+        <a href="login.html">Sign in</a>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Afristay</span>
+        <span>Built for modern African hospitality</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/supabase-config.js"></script>
+  <script>
+    // ============================================
+    // GLOBALS
+    // ============================================
+    let allHotels = [];
+    let roomsByHotel = {};
+    let isDataLoaded = false;
+
+    // ============================================
+    // MOBILE TOGGLE
+    // ============================================
+    const mobileToggle = document.getElementById('mobileToggle');
+    const navLinks = document.getElementById('navLinks');
+    const navActions = document.getElementById('navActions');
+
+    mobileToggle.addEventListener('click', () => {
+      navLinks.classList.toggle('open');
+      navActions.classList.toggle('open');
+    });
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.classList.remove('open');
+        navActions.classList.remove('open');
+      });
+    });
+
+    // ============================================
+    // CHECK SUPABASE CLIENT
+    // ============================================
+    function getSupabase() {
+      if (typeof supabaseClient !== 'undefined') {
+        return supabaseClient;
+      }
+      console.error('Supabase client not found!');
+      return null;
+    }
+
+    // ============================================
+    // INIT
+    // ============================================
+    async function init() {
+      const sb = getSupabase();
+      if (!sb) {
+        document.querySelectorAll('.loading').forEach(el => {
+          el.innerHTML = '<div class="empty-state">⚠️ Database connection error. Please refresh.</div>';
+        });
+        return;
+      }
+
+      try {
+        await loadCityOptions();
+        await loadAllData();
+        isDataLoaded = true;
+        renderRecommended();
+        renderOffers();
+        renderBudget();
+        renderRecent();
+        tryNearYou();
+      } catch (error) {
+        console.error('Init error:', error);
+        document.querySelectorAll('.loading').forEach(el => {
+          el.innerHTML = '<div class="empty-state">⚠️ Failed to load properties. Please refresh.</div>';
+        });
+      }
+    }
+
+    // ============================================
+    // LOAD DATA
+    // ============================================
+    async function loadCityOptions() {
+      const sb = getSupabase();
+      if (!sb) return;
+
+      const { data, error } = await sb
+        .from("hotels")
+        .select("city")
+        .eq("approval_status", "approved");
+
+      if (error) {
+        console.error('Error loading cities:', error);
+        return;
+      }
+
+      const cities = [...new Set((data || []).map(h => h.city).filter(Boolean))].sort();
+      const select = document.getElementById("citySelect");
+      select.innerHTML = `<option value="">All cities</option>` + cities.map(c => `<option value="${c}">${c}</option>`).join("");
+    }
+
+    async function loadAllData() {
+      const sb = getSupabase();
+      if (!sb) return;
+
+      // Load hotels
+      const { data: hotels, error: hotelsError } = await sb
+        .from("hotels")
+        .select("id, name, city, property_type, latitude, longitude, cover_image_url, gallery_urls, created_at")
+        .eq("approval_status", "approved");
+
+      if (hotelsError) {
+        console.error('Error loading hotels:', hotelsError);
+        return;
+      }
+
+      allHotels = hotels || [];
+      console.log(`Loaded ${allHotels.length} hotels`);
+
+      if (!allHotels.length) return;
+
+      // Load rooms
+      const hotelIds = allHotels.map(h => h.id);
+      const { data: rooms, error: roomsError } = await sb
+        .from("rooms")
+        .select("id, hotel_id, rate_per_night, special_offer_price, is_featured, cover_image_url, gallery_urls, room_type")
+        .in("hotel_id", hotelIds)
+        .not("status", "eq", "maintenance");
+
+      if (roomsError) {
+        console.error('Error loading rooms:', roomsError);
+        return;
+      }
+
+      roomsByHotel = {};
+      (rooms || []).forEach(r => {
+        if (!roomsByHotel[r.hotel_id]) roomsByHotel[r.hotel_id] = [];
+        roomsByHotel[r.hotel_id].push(r);
+      });
+
+      console.log(`Loaded rooms for ${Object.keys(roomsByHotel).length} hotels`);
+    }
+
+    // ============================================
+    // CARD HELPERS
+    // ============================================
+    function buildCardData(hotel) {
+      const rooms = roomsByHotel[hotel.id] || [];
+      if (!rooms.length) return null;
+
+      const cheapest = rooms.reduce((min, r) => {
+        const price = r.special_offer_price || r.rate_per_night;
+        const minPrice = min.special_offer_price || min.rate_per_night;
+        return price < minPrice ? r : min;
+      }, rooms[0]);
+
+      const image = hotel.cover_image_url || (hotel.gallery_urls || [])[0] || cheapest.cover_image_url || (cheapest.gallery_urls || [])[0] || "";
+      const hasOffer = !!cheapest.special_offer_price;
+
+      return {
+        hotel,
+        room: cheapest,
+        image,
+        hasOffer,
+        displayPrice: hasOffer ? cheapest.special_offer_price : cheapest.rate_per_night,
+        originalPrice: cheapest.rate_per_night,
+      };
+    }
+
+    function renderCard(cardData) {
+      const { hotel, image, hasOffer, displayPrice, originalPrice } = cardData;
+      return `
+        <div class="property-card" onclick="window.location.href='property.html?hotel=${hotel.id}'">
+          <div class="img-wrap">
+            ${image ? `<img src="${image}" alt="${hotel.name}" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-size:11px;\\'>No photo</div>';">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-size:11px;">No photo yet</div>`}
+            <span class="badge-overlay">${capitalize(hotel.property_type)}</span>
+            ${hasOffer ? `<span class="offer-badge">Offer</span>` : ""}
+          </div>
+          <div class="info">
+            <div class="name">${hotel.name}</div>
+            <div class="loc">${hotel.city || ""}</div>
+            <div class="price">
+              ${hasOffer ? `<span class="strike">₦${Number(originalPrice).toLocaleString()}</span>` : ""}
+              ₦${Number(displayPrice).toLocaleString()} <span>/ night</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCardList(containerId, cards) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      if (!cards.length) {
+        el.innerHTML = `<div class="empty-state">Nothing here yet.</div>`;
+        return;
+      }
+      el.innerHTML = cards.map(renderCard).join("");
+    }
+
+    // ============================================
+    // SECTIONS
+    // ============================================
+    function renderRecommended() {
+      if (!allHotels.length) {
+        document.getElementById('recommendedCards').innerHTML = '<div class="empty-state">No properties available yet.</div>';
+        return;
+      }
+      const cards = allHotels
+        .map(buildCardData)
+        .filter(c => c && c.room.is_featured)
+        .slice(0, 10);
+      renderCardList("recommendedCards", cards.length ? cards : allHotels.map(buildCardData).filter(Boolean).slice(0, 10));
+    }
+
+    function renderOffers() {
+      if (!allHotels.length) {
+        document.getElementById('offersCards').innerHTML = '<div class="empty-state">No offers available yet.</div>';
+        return;
+      }
+      const cards = allHotels.map(buildCardData).filter(c => c && c.hasOffer).slice(0, 10);
+      renderCardList("offersCards", cards);
+    }
+
+    function renderBudget() {
+      if (!allHotels.length) {
+        document.getElementById('budgetCards').innerHTML = '<div class="empty-state">No properties available yet.</div>';
+        return;
+      }
+      const cards = allHotels.map(buildCardData).filter(Boolean)
+        .sort((a, b) => a.displayPrice - b.displayPrice)
+        .slice(0, 10);
+      renderCardList("budgetCards", cards);
+    }
+
+    function renderRecent() {
+      if (!allHotels.length) {
+        document.getElementById('recentCards').innerHTML = '<div class="empty-state">No properties available yet.</div>';
+        return;
+      }
+      const cards = [...allHotels]
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .map(buildCardData).filter(Boolean)
+        .slice(0, 10);
+      renderCardList("recentCards", cards);
+    }
+
+    // ============================================
+    // NEAR YOU (Geolocation)
+    // ============================================
+    function tryNearYou() {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition((pos) => {
+        const { latitude, longitude } = pos.coords;
+        const withDistance = allHotels
+          .filter(h => h.latitude && h.longitude)
+          .map(h => ({ hotel: h, distance: haversine(latitude, longitude, h.latitude, h.longitude) }))
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 10)
+          .map(x => buildCardData(x.hotel))
+          .filter(Boolean);
+
+        if (withDistance.length) {
+          document.getElementById("nearYouSection").style.display = "";
+          renderCardList("nearYouCards", withDistance);
+        }
+      }, () => { /* silently skip if permission denied */ });
+    }
+
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    // ============================================
+    // SEARCH — FIXED
+    // ============================================
+    function runSearch() {
+      console.log('runSearch() called');
+
+      if (!isDataLoaded || !allHotels.length) {
+        alert('Properties are still loading. Please wait a moment and try again.');
+        return;
+      }
+
+      const city = document.getElementById("citySelect").value;
+      const type = document.getElementById("typeSelect").value;
+      const maxPrice = document.getElementById("priceSelect").value;
+
+      console.log('Search filters:', { city, type, maxPrice });
+
+      // Filter hotels
+      let filtered = allHotels.filter(h => {
+        let match = true;
+        if (city && h.city !== city) match = false;
+        if (type && h.property_type !== type) match = false;
+        return match;
+      });
+
+      console.log(`Filtered to ${filtered.length} hotels`);
+
+      // Build card data
+      let cards = filtered.map(buildCardData).filter(Boolean);
+      console.log(`Built ${cards.length} cards`);
+
+      // Apply price filter
+      if (maxPrice) {
+        cards = cards.filter(c => c.displayPrice <= Number(maxPrice));
+        console.log(`After price filter: ${cards.length} cards`);
+      }
+
+      // Update results
+      document.getElementById("resultsTitle").textContent = city ? `Stays in ${city}` : "All stays";
+      document.getElementById("resultsCount").textContent = `${cards.length} found`;
+
+      const grid = document.getElementById("resultsGrid");
+      if (cards.length) {
+        grid.innerHTML = cards.map(renderCard).join("");
+      } else {
+        grid.innerHTML = `<div class="empty-state">No listings match these filters yet. Try widening your search.</div>`;
+      }
+
+      document.getElementById("homeView").style.display = "none";
+      document.getElementById("resultsView").style.display = "block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function showHome() {
+      document.getElementById("homeView").style.display = "block";
+      document.getElementById("resultsView").style.display = "none";
+    }
+
+    // ============================================
+    // HELPERS
+    // ============================================
+    function capitalize(str) {
+      if (!str) return "";
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    // ============================================
+    // START
+    // ============================================
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+
+</body>
+</html>

@@ -1,1387 +1,1061 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manager Dashboard — Afristay</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-  <style>
-    /* ----- reset & base ----- */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Inter', -apple-system, Segoe UI, Roboto, sans-serif;
-    }
-
-    body {
-      background: #FAF9F6;
-      color: #1F2937;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ----- sticky navigation bar ----- */
-    .navbar {
-      position: sticky;
-      top: 0;
-      width: 100%;
-      background: #FFFFFF;
-      padding: 14px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid #E5E7EB;
-      z-index: 100;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-      gap: 12px;
-    }
-
-    .hotel-brand {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .hotel-name {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #183A2D;
-      line-height: 1.2;
-    }
-
-    .hotel-role {
-      font-size: 12px;
-      color: #9CA3AF;
-      font-weight: 500;
-      letter-spacing: 0.3px;
-    }
-
-    .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-
-    .nav-user {
-      font-size: 14px;
-      font-weight: 500;
-      color: #1F2937;
-    }
-
-    .nav-user span {
-      color: #C8A86B;
-      font-weight: 600;
-    }
-
-    .btn-logout {
-      background: transparent;
-      border: 1px solid #E5E7EB;
-      padding: 8px 20px;
-      border-radius: 30px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #1F2937;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn-logout:hover {
-      background: #183A2D;
-      color: #FAF9F6;
-      border-color: #183A2D;
-    }
-
-    /* ----- main content ----- */
-    main {
-      flex: 1;
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 24px 32px;
-      width: 100%;
-    }
-
-    /* ----- stat cards ----- */
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
-      margin-bottom: 32px;
-    }
-
-    .stat-card {
-      background: #FFFFFF;
-      border-radius: 16px;
-      padding: 20px 24px;
-      border: 1px solid #E5E7EB;
-      box-shadow: 0 2px 8px rgba(24, 58, 45, 0.04);
-      transition: all 0.2s;
-    }
-
-    .stat-card:hover {
-      box-shadow: 0 8px 24px rgba(24, 58, 45, 0.06);
-      border-color: #C8A86B;
-    }
-
-    .stat-card .value {
-      font-size: 28px;
-      font-weight: 700;
-      color: #183A2D;
-    }
-
-    .stat-card .label {
-      font-size: 13px;
-      color: #6B7280;
-      margin-top: 4px;
-      font-weight: 500;
-    }
-
-    /* ----- search/booking link panel ----- */
-    .search-panel {
-      background: #FFFFFF;
-      border-radius: 16px;
-      padding: 20px 24px;
-      margin-bottom: 24px;
-      border: 1px solid #E5E7EB;
-      box-shadow: 0 2px 8px rgba(24, 58, 45, 0.04);
-    }
-
-    .search-panel label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: #1F2937;
-      margin-bottom: 8px;
-    }
-
-    .search-panel .link-row {
-      display: flex;
-      gap: 8px;
-    }
-
-    .search-panel .link-row input {
-      flex: 1;
-      padding: 10px 14px;
-      border: 1px solid #E5E7EB;
-      border-radius: 10px;
-      font-size: 13px;
-      background: #FAF9F6;
-      color: #1F2937;
-    }
-
-    .search-panel .link-row input:focus {
-      outline: none;
-      border-color: #183A2D;
-      background: #FFFFFF;
-    }
-
-    .search-panel .hint {
-      font-size: 12px;
-      color: #9CA3AF;
-      margin-top: 8px;
-    }
-
-    /* ----- tabs ----- */
-    .tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 24px;
-      border-bottom: 2px solid #E5E7EB;
-    }
-
-    .tab {
-      padding: 12px 24px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      color: #6B7280;
-      border-bottom: 3px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .tab:hover {
-      color: #183A2D;
-    }
-
-    .tab.active {
-      color: #183A2D;
-      border-bottom-color: #183A2D;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    /* ----- section header ----- */
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .section-header h2 {
-      font-size: 18px;
-      font-weight: 700;
-      color: #183A2D;
-    }
-
-    .btn-primary {
-      background: #183A2D;
-      color: #FAF9F6;
-      border: none;
-      padding: 10px 24px;
-      border-radius: 30px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 4px 10px rgba(24, 58, 45, 0.15);
-    }
-
-    .btn-primary:hover {
-      background: #0f2b21;
-      box-shadow: 0 6px 14px rgba(24, 58, 45, 0.25);
-      transform: scale(1.02);
-    }
-
-    .btn-primary.small {
-      padding: 8px 16px;
-      font-size: 12px;
-    }
-
-    /* ----- table ----- */
-    .table-wrap {
-      background: #FFFFFF;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid #E5E7EB;
-      box-shadow: 0 2px 8px rgba(24, 58, 45, 0.04);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th,
-    td {
-      text-align: left;
-      padding: 14px 18px;
-      font-size: 13px;
-      border-bottom: 1px solid #F3F4F6;
-    }
-
-    th {
-      background: #FAF9F6;
-      color: #1F2937;
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 11px;
-      letter-spacing: 0.5px;
-    }
-
-    tr:last-child td {
-      border-bottom: none;
-    }
-
-    /* ----- badges ----- */
-    .badge {
-      display: inline-block;
-      padding: 3px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .badge.available {
-      background: #DCFCE7;
-      color: #2E7D32;
-    }
-
-    .badge.occupied {
-      background: #FEE2E2;
-      color: #D9534F;
-    }
-
-    .badge.maintenance {
-      background: #FEF3C7;
-      color: #D4A017;
-    }
-
-    .badge.cleaning {
-      background: #DBEAFE;
-      color: #183A2D;
-    }
-
-    .badge.active {
-      background: #DCFCE7;
-      color: #2E7D32;
-    }
-
-    .badge.inactive {
-      background: #F3F4F6;
-      color: #6B7280;
-    }
-
-    .badge.unpaid {
-      background: #FEE2E2;
-      color: #D9534F;
-    }
-
-    .badge.partial {
-      background: #FEF3C7;
-      color: #D4A017;
-    }
-
-    .badge.paid {
-      background: #DCFCE7;
-      color: #2E7D32;
-    }
-
-    .badge.refunded {
-      background: #F3F4F6;
-      color: #6B7280;
-    }
-
-    .badge.pending {
-      background: #FEF3C7;
-      color: #D4A017;
-    }
-
-    .badge.confirmed {
-      background: #DBEAFE;
-      color: #183A2D;
-    }
-
-    .badge.checked_in {
-      background: #DCFCE7;
-      color: #2E7D32;
-    }
-
-    .badge.checked_out {
-      background: #F3F4F6;
-      color: #6B7280;
-    }
-
-    .badge.cancelled {
-      background: #FEE2E2;
-      color: #D9534F;
-    }
-
-    .badge.no_show {
-      background: #FEE2E2;
-      color: #D9534F;
-    }
-
-    .badge.booked {
-      background: #DBEAFE;
-      color: #183A2D;
-    }
-
-    .badge.free_today {
-      background: #DCFCE7;
-      color: #2E7D32;
-    }
-
-    .action-link {
-      color: #183A2D;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      margin-right: 10px;
-      background: none;
-      border: none;
-      padding: 4px 8px;
-      border-radius: 6px;
-      transition: all 0.2s;
-    }
-
-    .action-link:hover {
-      background: #F3F4F6;
-    }
-
-    .action-link.danger {
-      color: #D9534F;
-    }
-
-    .action-link.danger:hover {
-      background: #FEE2E2;
-    }
-
-    /* ----- modals ----- */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      align-items: center;
-      justify-content: center;
-      z-index: 200;
-      padding: 20px;
-      backdrop-filter: blur(4px);
-    }
-
-    .modal-overlay.open {
-      display: flex;
-    }
-
-    .modal {
-      background: #FFFFFF;
-      border-radius: 20px;
-      padding: 32px;
-      width: 100%;
-      max-width: 460px;
-      max-height: 90vh;
-      overflow-y: auto;
-      border: 1px solid #E5E7EB;
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
-    }
-
-    .modal h3 {
-      font-size: 22px;
-      font-weight: 700;
-      color: #183A2D;
-      margin-bottom: 20px;
-    }
-
-    .modal label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: #1F2937;
-      margin-bottom: 5px;
-      margin-top: 16px;
-    }
-
-    .modal input,
-    .modal select {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1px solid #E5E7EB;
-      border-radius: 10px;
-      font-size: 14px;
-      background: #FAF9F6;
-      transition: border 0.2s, box-shadow 0.2s;
-      color: #1F2937;
-    }
-
-    .modal input:focus,
-    .modal select:focus {
-      outline: none;
-      border-color: #183A2D;
-      box-shadow: 0 0 0 3px rgba(24, 58, 45, 0.08);
-      background: #FFFFFF;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 24px;
-    }
-
-    .modal-actions button {
-      flex: 1;
-      padding: 12px;
-      border-radius: 30px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn-cancel {
-      background: #FAF9F6;
-      border: 1px solid #E5E7EB;
-      color: #1F2937;
-    }
-
-    .btn-cancel:hover {
-      background: #F3F4F6;
-    }
-
-    .btn-confirm {
-      background: #183A2D;
-      color: #FAF9F6;
-      border: none;
-      box-shadow: 0 4px 10px rgba(24, 58, 45, 0.15);
-    }
-
-    .btn-confirm:hover {
-      background: #0f2b21;
-      box-shadow: 0 6px 14px rgba(24, 58, 45, 0.25);
-      transform: scale(1.02);
-    }
-
-    .invite-result {
-      background: #FAF9F6;
-      border: 2px solid #C8A86B;
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 16px;
-      display: none;
-    }
-
-    .invite-result code {
-      font-size: 20px;
-      font-weight: 700;
-      color: #183A2D;
-      letter-spacing: 1px;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: #9CA3AF;
-      font-size: 14px;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #9CA3AF;
-    }
-
-    /* ----- charts ----- */
-    .chart-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    .chart-box {
-      background: #FFFFFF;
-      border-radius: 16px;
-      padding: 24px;
-      border: 1px solid #E5E7EB;
-      box-shadow: 0 2px 8px rgba(24, 58, 45, 0.04);
-    }
-
-    .chart-box h2 {
-      font-size: 15px;
-      font-weight: 700;
-      color: #183A2D;
-      margin-bottom: 16px;
-    }
-
-    .chart-box canvas {
-      max-height: 200px;
-    }
-
-    /* ----- footer ----- */
-    .footer {
-      margin-top: 48px;
-      padding: 24px 32px;
-      text-align: center;
-      border-top: 1px solid #E5E7EB;
-      background: #FFFFFF;
-    }
-
-    .footer-content {
-      max-width: 1280px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-size: 14px;
-      color: #6B7280;
-    }
-
-    .footer-content .afristay {
-      font-weight: 700;
-      color: #183A2D;
-    }
-
-    .footer-content .afristay span {
-      color: #C8A86B;
-    }
-
-    /* ----- responsive ----- */
-    @media (max-width: 768px) {
-      .navbar {
-        padding: 12px 16px;
-        flex-wrap: wrap;
-      }
-
-      .hotel-name {
-        font-size: 1.1rem;
-      }
-
-      main {
-        padding: 16px;
-      }
-
-      .stats {
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
-
-      .stat-card {
-        padding: 16px;
-      }
-
-      .stat-card .value {
-        font-size: 22px;
-      }
-
-      .search-panel .link-row {
-        flex-direction: column;
-      }
-
-      .search-panel .link-row input {
-        width: 100%;
-      }
-
-      .search-panel .link-row button {
-        width: 100%;
-      }
-
-      .chart-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .table-wrap {
-        overflow-x: auto;
-      }
-
-      table {
-        font-size: 12px;
-        min-width: 700px;
-      }
-
-      th,
-      td {
-        padding: 10px 12px;
-      }
-
-      .modal {
-        padding: 24px;
-        margin: 16px;
-      }
-
-      .footer {
-        padding: 16px;
-      }
-
-      .footer-content {
-        font-size: 12px;
-        flex-wrap: wrap;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .stats {
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-      }
-
-      .stat-card {
-        padding: 12px 16px;
-      }
-
-      .stat-card .value {
-        font-size: 18px;
-      }
-
-      .nav-user {
-        font-size: 12px;
-      }
-
-      .btn-logout {
-        font-size: 12px;
-        padding: 6px 14px;
-      }
-
-      .tab {
-        padding: 8px 14px;
-        font-size: 13px;
-      }
-
-      .section-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-      }
-
-      .section-header .btn-primary {
-        width: 100%;
-        text-align: center;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manager Dashboard — Afristay</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
+  body { background: #f4f5f7; color: #1a1a1a; }
+
+  /* Top bar */
+  header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 18px; }
+  header .hotel-name { font-size: 13px; color: #666; }
+  header button { background: #f4f5f7; border: 1px solid #ddd; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+  /* Stat cards */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .stat-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .stat-card .value { font-size: 28px; font-weight: 700; }
+  .stat-card .label { font-size: 13px; color: #666; margin-top: 4px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; }
+  .tab { padding: 10px 18px; cursor: pointer; font-size: 14px; font-weight: 600; color: #666; border-bottom: 2px solid transparent; }
+  .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Section header */
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .section-header h2 { font-size: 16px; }
+  .btn-primary { background: #2563eb; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  /* Table */
+  .table-wrap { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+  th { background: #fafafa; color: #666; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+  tr:last-child td { border-bottom: none; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge.available { background: #dcfce7; color: #16a34a; }
+  .badge.occupied { background: #fee2e2; color: #dc2626; }
+  .badge.maintenance { background: #fef3c7; color: #d97706; }
+  .badge.cleaning { background: #dbeafe; color: #2563eb; }
+  .badge.active { background: #dcfce7; color: #16a34a; }
+  .badge.inactive { background: #f3f4f6; color: #6b7280; }
+  .badge.unpaid { background: #fee2e2; color: #dc2626; }
+  .badge.partial { background: #fef3c7; color: #d97706; }
+  .badge.paid { background: #dcfce7; color: #16a34a; }
+  .badge.refunded { background: #f3f4f6; color: #6b7280; }
+
+  .action-link { color: #2563eb; cursor: pointer; font-size: 13px; font-weight: 600; margin-right: 12px; background: none; border: none; }
+  .action-link.danger { color: #dc2626; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 50; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 12px; padding: 28px; width: 100%; max-width: 420px; }
+  .modal h3 { font-size: 17px; margin-bottom: 20px; }
+  .modal label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; margin-top: 14px; }
+  .modal input, .modal select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+  .modal-actions button { flex: 1; padding: 11px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-cancel { background: #f4f5f7; border: 1px solid #ddd; }
+  .btn-confirm { background: #2563eb; color: #fff; border: none; }
+
+  .invite-result { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-top: 16px; display: none; }
+  .invite-result code { font-size: 16px; font-weight: 700; color: #2563eb; }
+
+  .empty-state { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+  .loading { text-align: center; padding: 40px; color: #999; }
+</style>
 </head>
 <body>
 
-  <!-- ===== STICKY NAVIGATION ===== -->
-  <nav class="navbar">
-    <div class="hotel-brand">
-      <div class="hotel-name" id="hotelNameLabel">Loading...</div>
-      <div class="hotel-role">Manager Dashboard</div>
+<header>
+  <div>
+    <h1>Manager Dashboard</h1>
+    <div class="hotel-name" id="hotelNameLabel">Loading...</div>
+  </div>
+  <button onclick="logout()">Log Out</button>
+</header>
+
+<main>
+  <div class="stats">
+    <div class="stat-card"><div class="value" id="statTotalRooms">—</div><div class="label">Total Rooms</div></div>
+    <div class="stat-card"><div class="value" id="statOccupied">—</div><div class="label">Occupied Now</div></div>
+    <div class="stat-card"><div class="value" id="statAvailable">—</div><div class="label">Available Now</div></div>
+    <div class="stat-card"><div class="value" id="statStaff">—</div><div class="label">Active Staff</div></div>
+  </div>
+
+  <div class="search-panel" style="background:#fff;border-radius:12px;padding:18px 20px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <div style="font-size:13px;font-weight:600;color:#666;margin-bottom:8px;">Your Online Booking Link</div>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="bookingLinkInput" readonly style="flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fafafa;">
+      <button class="btn-primary" onclick="copyBookingLink()">Copy Link</button>
     </div>
+    <div style="font-size:12px;color:#999;margin-top:8px;">Share this on WhatsApp, your website, or social media so guests can book directly.</div>
+  </div>
 
-    <div class="nav-right">
-      <div class="nav-user" id="staffNameLabel">Loading...</div>
-      <button class="btn-logout" onclick="logout()">Log Out</button>
+  <div class="tabs">
+    <div class="tab active" data-tab="rooms">Rooms</div>
+    <div class="tab" data-tab="property">Property Details</div>
+    <div class="tab" data-tab="staff">Staff</div>
+    <div class="tab" data-tab="bookings" style="display:none;">Bookings</div>
+    <div class="tab" data-tab="billing">Billing</div>
+    <div class="tab" data-tab="reports">Reports</div>
+  </div>
+
+  <!-- ROOMS TAB -->
+  <div class="tab-content active" id="tab-rooms">
+    <div class="section-header">
+      <h2>All Rooms</h2>
+      <button class="btn-primary" onclick="openRoomModal()">+ Add Room</button>
     </div>
-  </nav>
-
-  <!-- ===== MAIN CONTENT ===== -->
-  <main>
-    <!-- Stats -->
-    <div class="stats">
-      <div class="stat-card"><div class="value" id="statTotalRooms">—</div><div class="label">Total Rooms</div></div>
-      <div class="stat-card"><div class="value" id="statOccupied">—</div><div class="label">Occupied Now</div></div>
-      <div class="stat-card"><div class="value" id="statAvailable">—</div><div class="label">Available Now</div></div>
-      <div class="stat-card"><div class="value" id="statStaff">—</div><div class="label">Active Staff</div></div>
-    </div>
-
-    <!-- Booking Link -->
-    <div class="search-panel">
-      <label>Your Online Booking Link</label>
-      <div class="link-row">
-        <input type="text" id="bookingLinkInput" readonly>
-        <button class="btn-primary small" onclick="copyBookingLink()">Copy Link</button>
-      </div>
-      <div class="hint">Share this on WhatsApp, your website, or social media so guests can book directly.</div>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tabs">
-      <div class="tab active" data-tab="rooms">Rooms</div>
-      <div class="tab" data-tab="staff">Staff</div>
-      <div class="tab" data-tab="billing">Billing</div>
-      <div class="tab" data-tab="reports">Reports</div>
-    </div>
-
-    <!-- ROOMS TAB -->
-    <div class="tab-content active" id="tab-rooms">
-      <div class="section-header">
-        <h2>All Rooms</h2>
-        <button class="btn-primary" onclick="openRoomModal()">+ Add Room</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Room No.</th><th>Type</th><th>Rate/Night</th><th>Status</th><th>Today</th><th></th></tr>
-          </thead>
-          <tbody id="roomsTableBody">
-            <tr><td colspan="6" class="loading">Loading rooms...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- STAFF TAB -->
-    <div class="tab-content" id="tab-staff">
-      <div class="section-header">
-        <h2>All Staff</h2>
-        <button class="btn-primary" onclick="openStaffModal()">+ Invite Staff</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Name</th><th>Role</th><th>Phone</th><th>Status</th><th>Invite Code</th><th></th></tr>
-          </thead>
-          <tbody id="staffTableBody">
-            <tr><td colspan="6" class="loading">Loading staff...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- BILLING TAB -->
-    <div class="tab-content" id="tab-billing">
-      <div class="stats" style="margin-bottom: 20px;">
-        <div class="stat-card"><div class="value" id="statTotalRevenue">—</div><div class="label">Total Revenue Collected</div></div>
-        <div class="stat-card"><div class="value" id="statOutstanding">—</div><div class="label">Outstanding (Unpaid/Partial)</div></div>
-        <div class="stat-card"><div class="value" id="statPaidInvoices">—</div><div class="label">Fully Paid Invoices</div></div>
-      </div>
-      <div class="section-header">
-        <h2>All Invoices</h2>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Guest</th><th>Room</th><th>Room Charge</th><th>Service</th><th>VAT</th><th>Total</th><th>Status</th><th>Method(s)</th></tr>
-          </thead>
-          <tbody id="billingTableBody">
-            <tr><td colspan="8" class="loading">Loading invoices...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- REPORTS TAB -->
-    <div class="tab-content" id="tab-reports">
-      <div class="search-panel">
-        <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;">
-          <div>
-            <label>From</label>
-            <input type="date" id="reportFrom" style="padding:10px 14px;border:1px solid #E5E7EB;border-radius:10px;font-size:14px;background:#FAF9F6;width:100%;">
-          </div>
-          <div>
-            <label>To</label>
-            <input type="date" id="reportTo" style="padding:10px 14px;border:1px solid #E5E7EB;border-radius:10px;font-size:14px;background:#FAF9F6;width:100%;">
-          </div>
-          <button class="btn-primary" onclick="loadReports()">Update Reports</button>
-        </div>
-      </div>
-
-      <div class="stats" style="margin-bottom:24px;">
-        <div class="stat-card"><div class="value" id="reportRevenue">—</div><div class="label">Revenue in Range</div></div>
-        <div class="stat-card"><div class="value" id="reportBookings">—</div><div class="label">Bookings in Range</div></div>
-        <div class="stat-card"><div class="value" id="reportOccupancyRate">—</div><div class="label">Avg. Occupancy Rate</div></div>
-        <div class="stat-card"><div class="value" id="reportAvgStay">—</div><div class="label">Avg. Nights per Stay</div></div>
-      </div>
-
-      <div class="chart-box" style="margin-bottom:20px;">
-        <h2>Daily Revenue</h2>
-        <canvas id="revenueChart" height="90"></canvas>
-      </div>
-
-      <div class="chart-grid">
-        <div class="chart-box">
-          <h2>Bookings by Room Type</h2>
-          <canvas id="roomTypeChart"></canvas>
-        </div>
-        <div class="chart-box">
-          <h2>Bookings by Source</h2>
-          <canvas id="sourceChart"></canvas>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- ===== FOOTER ===== -->
-  <footer class="footer">
-    <div class="footer-content">
-      <span>Powered by</span>
-      <span class="afristay">AFRI<span>STAY</span></span>
-      <span>• Hotel Management Platform</span>
-    </div>
-  </footer>
-
-  <!-- ADD ROOM MODAL -->
-  <div class="modal-overlay" id="roomModalOverlay">
-    <div class="modal">
-      <h3>Add Room</h3>
-      <form id="roomForm">
-        <label>Room Number</label>
-        <input type="text" id="roomNumber" required placeholder="e.g. 204">
-
-        <label>Room Type</label>
-        <select id="roomType" required>
-          <option value="standard">Standard</option>
-          <option value="deluxe">Deluxe</option>
-          <option value="family">Family</option>
-          <option value="business">Business Suite</option>
-        </select>
-
-        <label>Rate per Night (₦)</label>
-        <input type="number" id="roomRate" required min="0" placeholder="e.g. 15000">
-
-        <label>Description (optional)</label>
-        <input type="text" id="roomDescription" placeholder="e.g. Garden view, king bed">
-
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" onclick="closeRoomModal()">Cancel</button>
-          <button type="submit" class="btn-confirm">Add Room</button>
-        </div>
-      </form>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Room No.</th><th>Type</th><th>Rate/Night</th><th>Status</th><th>Today</th><th></th></tr>
+        </thead>
+        <tbody id="roomsTableBody">
+          <tr><td colspan="6" class="loading">Loading rooms...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- INVITE STAFF MODAL -->
-  <div class="modal-overlay" id="staffModalOverlay">
-    <div class="modal">
-      <h3>Invite Staff Member</h3>
-      <form id="staffForm">
-        <label>Full Name</label>
-        <input type="text" id="staffName" required>
+  <!-- PROPERTY DETAILS TAB -->
+  <div class="tab-content" id="tab-property">
+    <div class="section-header"><h2>Property Details</h2></div>
+    <div style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-bottom:20px;">
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Property Type</label>
+      <select id="propType" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:16px;">
+        <option value="hotel">Hotel</option>
+        <option value="apartment">Apartment / Short-let</option>
+      </select>
 
-        <label>Role</label>
-        <select id="staffRole" required>
-          <option value="receptionist">Receptionist</option>
-          <option value="housekeeper">Housekeeper</option>
-          <option value="manager">Manager</option>
-        </select>
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Short Description</label>
+      <textarea id="propDescription" rows="3" placeholder="A short, appealing description guests will see first" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;margin-bottom:16px;"></textarea>
 
-        <label>Phone</label>
-        <input type="tel" id="staffPhone" required placeholder="080...">
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Amenities (comma-separated)</label>
+      <input type="text" id="propAmenities" placeholder="e.g. Wifi, Parking, Generator, Pool, Air Conditioning" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:16px;">
 
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" onclick="closeStaffModal()">Cancel</button>
-          <button type="submit" class="btn-confirm">Generate Invite</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-bottom:16px;">
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Latitude</label>
+          <input type="number" id="propLat" step="0.000001" placeholder="e.g. 9.2085" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
         </div>
-      </form>
-      <div class="invite-result" id="inviteResult">
-        Share this code with them. They'll enter it on the "Join Team" page:
-        <br><br>
-        <code id="inviteCodeDisplay"></code>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Longitude</label>
+          <input type="number" id="propLng" step="0.000001" placeholder="e.g. 12.4818" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+        </div>
+        <button type="button" class="btn-primary" onclick="useCurrentLocation()" style="white-space:nowrap;">Use My Location</button>
       </div>
+      <div style="font-size:12px;color:#999;margin-bottom:20px;">Powers "near you" search on the marketplace. Stand at the property and tap "Use My Location" for the most accurate result.</div>
+
+      <button class="btn-primary" onclick="savePropertyDetails()">Save Property Details</button>
+    </div>
+
+    <div style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+      <div class="section-header" style="margin-bottom:12px;"><h2 style="font-size:15px;">Property Photos</h2></div>
+      <div style="font-size:13px;color:#666;margin-bottom:12px;">General shots — exterior, lobby, common areas. Room/unit-specific photos are added separately when editing each room.</div>
+      <input type="file" id="propGalleryInput" accept="image/*" multiple style="margin-bottom:16px;">
+      <div id="propGalleryPreview" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-staff">
+    <div class="section-header">
+      <h2>All Staff</h2>
+      <button class="btn-primary" onclick="openStaffModal()">+ Invite Staff</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Role</th><th>Phone</th><th>Status</th><th>Invite Code</th><th></th></tr>
+        </thead>
+        <tbody id="staffTableBody">
+          <tr><td colspan="6" class="loading">Loading staff...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <script src="js/supabase-config.js"></script>
-  <script src="js/auth-guard.js"></script>
-  <script>
-    let currentStaff = null;
-    let revenueChartInstance = null;
-    let roomTypeChartInstance = null;
-    let sourceChartInstance = null;
+  <!-- BOOKINGS TAB (Listing Only properties) -->
+  <div class="tab-content" id="tab-bookings">
+    <div class="section-header"><h2>Booking Requests</h2></div>
+    <div style="font-size:13px;color:#666;margin-bottom:16px;">These come from your marketplace listing or booking link. Since you're on Listing Only, you handle confirmation and payment directly with the guest — use these actions to keep records straight.</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Guest</th><th>Room/Unit</th><th>Check-in</th><th>Check-out</th><th>Status</th><th>Payment</th><th></th></tr>
+        </thead>
+        <tbody id="ownerBookingsTableBody">
+          <tr><td colspan="7" class="loading">Loading bookings...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-    async function init() {
-      currentStaff = await requireAuth(["manager"]);
-      if (!currentStaff) return;
+  <!-- BILLING TAB -->
+  <div class="tab-content" id="tab-billing">
+    <div class="stats" style="margin-bottom: 20px;">
+      <div class="stat-card"><div class="value" id="statTotalRevenue">—</div><div class="label">Total Revenue Collected</div></div>
+      <div class="stat-card"><div class="value" id="statOutstanding">—</div><div class="label">Outstanding (Unpaid/Partial)</div></div>
+      <div class="stat-card"><div class="value" id="statPaidInvoices">—</div><div class="label">Fully Paid Invoices</div></div>
+    </div>
+    <div class="section-header">
+      <h2>All Invoices</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Guest</th><th>Room</th><th>Room Charge</th><th>Service</th><th>VAT</th><th>Total</th><th>Status</th><th>Method(s)</th></tr>
+        </thead>
+        <tbody id="billingTableBody">
+          <tr><td colspan="8" class="loading">Loading invoices...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-      // Fetch hotel details
-      const { data: hotel } = await supabaseClient
-        .from("hotels")
-        .select("name, city")
-        .eq("id", currentStaff.hotel_id)
-        .single();
+  <!-- REPORTS TAB -->
+  <div class="tab-content" id="tab-reports">
+    <div class="search-panel" style="background:#fff;border-radius:12px;padding:18px 20px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,0.06);display:flex;gap:12px;align-items:end;flex-wrap:wrap;">
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;color:#666;margin-bottom:6px;">From</label>
+        <input type="date" id="reportFrom" style="padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;color:#666;margin-bottom:6px;">To</label>
+        <input type="date" id="reportTo" style="padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+      </div>
+      <button class="btn-primary" onclick="loadReports()">Update Reports</button>
+    </div>
 
-      document.getElementById("hotelNameLabel").textContent = hotel ? `${hotel.name} — ${hotel.city}` : "Hotel";
+    <div class="stats" style="margin-bottom:24px;">
+      <div class="stat-card"><div class="value" id="reportRevenue">—</div><div class="label">Revenue in Range</div></div>
+      <div class="stat-card"><div class="value" id="reportBookings">—</div><div class="label">Bookings in Range</div></div>
+      <div class="stat-card"><div class="value" id="reportOccupancyRate">—</div><div class="label">Avg. Occupancy Rate</div></div>
+      <div class="stat-card"><div class="value" id="reportAvgStay">—</div><div class="label">Avg. Nights per Stay</div></div>
+    </div>
 
-      // Staff name
-      document.getElementById("staffNameLabel").innerHTML = 
-        `${currentStaff.full_name || "Manager"} <span>— Manager</span>`;
+    <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+      <h2 style="font-size:15px;margin-bottom:16px;">Daily Revenue</h2>
+      <canvas id="revenueChart" height="90"></canvas>
+    </div>
 
-      // Build booking link
-      const bookingUrl = `${window.location.origin}${window.location.pathname.replace("manager-dashboard.html", "")}guest-booking.html?hotel=${currentStaff.hotel_id}`;
-      document.getElementById("bookingLinkInput").value = bookingUrl;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+        <h2 style="font-size:15px;margin-bottom:16px;">Bookings by Room Type</h2>
+        <canvas id="roomTypeChart"></canvas>
+      </div>
+      <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+        <h2 style="font-size:15px;margin-bottom:16px;">Bookings by Source</h2>
+        <canvas id="sourceChart"></canvas>
+      </div>
+    </div>
+  </div>
+</main>
 
-      // Default report range: last 30 days
-      const today = new Date();
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      document.getElementById("reportFrom").value = thirtyDaysAgo.toISOString().split("T")[0];
-      document.getElementById("reportTo").value = today.toISOString().split("T")[0];
+<!-- ADD/EDIT ROOM MODAL -->
+<div class="modal-overlay" id="roomModalOverlay">
+  <div class="modal" style="max-height:90vh;overflow-y:auto;">
+    <h3 id="roomModalTitle">Add Room</h3>
+    <form id="roomForm">
+      <input type="hidden" id="editingRoomId" value="">
 
-      await loadRooms();
-      await loadStaff();
-    }
+      <label>Room Number / Unit Name</label>
+      <input type="text" id="roomNumber" required placeholder="e.g. 204 or 'Garden Apartment'">
 
-    function copyBookingLink() {
-      const input = document.getElementById("bookingLinkInput");
-      input.select();
-      navigator.clipboard.writeText(input.value).then(() => {
-        alert("Booking link copied! Share it with your guests.");
-      }).catch(() => {
-        alert("Couldn't copy automatically — please select and copy manually.");
-      });
-    }
+      <label>Room Type</label>
+      <select id="roomType" required>
+        <option value="standard">Standard</option>
+        <option value="deluxe">Deluxe</option>
+        <option value="family">Family</option>
+        <option value="business">Business Suite</option>
+        <option value="apartment_unit">Apartment / Whole Unit</option>
+      </select>
 
-    // ============ TABS ============
-    document.querySelectorAll(".tab").forEach(tab => {
-      tab.addEventListener("click", () => {
-        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-        tab.classList.add("active");
-        document.getElementById(`tab-${tab.dataset.tab}`).classList.add("active");
-        if (tab.dataset.tab === "billing") loadBilling();
-        if (tab.dataset.tab === "reports") loadReports();
-      });
+      <label>Rate per Night (₦)</label>
+      <input type="number" id="roomRate" required min="0" placeholder="e.g. 15000">
+
+      <label>Special Offer Price (₦, optional)</label>
+      <input type="number" id="roomSpecialPrice" min="0" placeholder="Leave blank if no offer">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div>
+          <label>Max Guests</label>
+          <input type="number" id="roomMaxGuests" min="1" placeholder="e.g. 2">
+        </div>
+        <div>
+          <label>Bedrooms</label>
+          <input type="number" id="roomBedrooms" min="0" placeholder="e.g. 1">
+        </div>
+        <div>
+          <label>Bathrooms</label>
+          <input type="number" id="roomBathrooms" min="0" placeholder="e.g. 1">
+        </div>
+      </div>
+
+      <label>Amenities (comma-separated)</label>
+      <input type="text" id="roomAmenities" placeholder="e.g. Wifi, AC, TV, Kitchenette">
+
+      <label>Description (optional)</label>
+      <input type="text" id="roomDescription" placeholder="e.g. Garden view, king bed">
+
+      <label style="display:flex;align-items:center;gap:8px;margin-top:16px;">
+        <input type="checkbox" id="roomFeatured" style="width:auto;">
+        Feature this listing (shows in "Recommended" on the marketplace)
+      </label>
+
+      <label style="margin-top:16px;">Photos</label>
+      <input type="file" id="roomGalleryInput" accept="image/*" multiple>
+      <div id="roomGalleryPreview" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:8px;"></div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeRoomModal()">Cancel</button>
+        <button type="submit" class="btn-confirm" id="roomSubmitBtn">Add Room</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- INVITE STAFF MODAL -->
+<div class="modal-overlay" id="staffModalOverlay">
+  <div class="modal">
+    <h3>Invite Staff Member</h3>
+    <form id="staffForm">
+      <label>Full Name</label>
+      <input type="text" id="staffName" required>
+
+      <label>Role</label>
+      <select id="staffRole" required>
+        <option value="receptionist">Receptionist</option>
+        <option value="housekeeper">Housekeeper</option>
+        <option value="manager">Manager</option>
+      </select>
+
+      <label>Phone</label>
+      <input type="tel" id="staffPhone" required placeholder="080...">
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeStaffModal()">Cancel</button>
+        <button type="submit" class="btn-confirm">Generate Invite</button>
+      </div>
+    </form>
+    <div class="invite-result" id="inviteResult">
+      Share this code with them. They'll enter it on the "Join Team" page:
+      <br><br>
+      <code id="inviteCodeDisplay"></code>
+    </div>
+  </div>
+</div>
+
+<script src="js/supabase-config.js"></script>
+<script src="js/auth-guard.js"></script>
+<script>
+let currentStaff = null;
+
+let managementMode = "managed";
+
+async function init() {
+  currentStaff = await requireAuth(["manager"]);
+  if (!currentStaff) return;
+
+  const { data: hotel } = await supabaseClient
+    .from("hotels")
+    .select("name, city, management_mode, property_type")
+    .eq("id", currentStaff.hotel_id)
+    .single();
+
+  document.getElementById("hotelNameLabel").textContent = hotel ? `${hotel.name} — ${hotel.city}` : "";
+  managementMode = hotel?.management_mode || "managed";
+
+  // Listing Only properties have no staff to manage, but need a simple way
+  // to see and respond to booking requests themselves — swap the Staff tab
+  // for a lightweight Bookings tab instead.
+  if (managementMode === "listing_only") {
+    document.querySelector('.tab[data-tab="staff"]').style.display = "none";
+    document.querySelector('.tab[data-tab="bookings"]').style.display = "";
+  } else {
+    document.querySelector('.tab[data-tab="bookings"]').style.display = "none";
+  }
+
+  // Build the shareable guest booking link
+  const bookingUrl = `${window.location.origin}${window.location.pathname.replace("manager-dashboard.html", "")}guest-booking.html?hotel=${currentStaff.hotel_id}`;
+  document.getElementById("bookingLinkInput").value = bookingUrl;
+
+  // Default report range: last 30 days
+  const todayForReport = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  document.getElementById("reportFrom").value = thirtyDaysAgo.toISOString().split("T")[0];
+  document.getElementById("reportTo").value = todayForReport.toISOString().split("T")[0];
+
+  await loadRooms();
+  if (managementMode !== "listing_only") await loadStaff();
+}
+
+function copyBookingLink() {
+  const input = document.getElementById("bookingLinkInput");
+  input.select();
+  navigator.clipboard.writeText(input.value).then(() => {
+    alert("Booking link copied! Share it with your guests.");
+  }).catch(() => {
+    alert("Couldn't copy automatically — please select and copy manually.");
+  });
+}
+
+// ============ TABS ============
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(`tab-${tab.dataset.tab}`).classList.add("active");
+    if (tab.dataset.tab === "billing") loadBilling();
+    if (tab.dataset.tab === "reports") loadReports();
+    if (tab.dataset.tab === "property") loadPropertyDetails();
+    if (tab.dataset.tab === "bookings") loadOwnerBookings();
+  });
+});
+
+// ============ BILLING ============
+async function loadBilling() {
+  const tbody = document.getElementById("billingTableBody");
+  tbody.innerHTML = `<tr><td colspan="8" class="loading">Loading invoices...</td></tr>`;
+
+  // Get all invoices for bookings belonging to this hotel's rooms
+  const { data: invoices, error } = await supabaseClient
+    .from("invoices")
+    .select(`
+      id, room_charge, service_charge, vat, total, status,
+      bookings (
+        guests ( full_name ),
+        rooms!inner ( room_number, hotel_id )
+      )
+    `)
+    .eq("bookings.rooms.hotel_id", currentStaff.hotel_id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Error loading invoices.</td></tr>`;
+    return;
+  }
+
+  if (!invoices.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">No invoices yet.</td></tr>`;
+  } else {
+    // Get payment methods used per invoice
+    const invoiceIds = invoices.map(i => i.id);
+    const { data: payments } = await supabaseClient
+      .from("payments")
+      .select("invoice_id, method")
+      .in("invoice_id", invoiceIds);
+
+    const methodsByInvoice = {};
+    (payments || []).forEach(p => {
+      if (!methodsByInvoice[p.invoice_id]) methodsByInvoice[p.invoice_id] = new Set();
+      methodsByInvoice[p.invoice_id].add(p.method);
     });
 
-    // ============ BILLING ============
-    async function loadBilling() {
-      const tbody = document.getElementById("billingTableBody");
-      tbody.innerHTML = `<tr><td colspan="8" class="loading">Loading invoices...</td></tr>`;
+    tbody.innerHTML = invoices.map(inv => {
+      const methods = methodsByInvoice[inv.id] ? Array.from(methodsByInvoice[inv.id]).map(capitalize).join(", ") : "—";
+      return `
+      <tr>
+        <td>${inv.bookings?.guests?.full_name || "—"}</td>
+        <td>${inv.bookings?.rooms?.room_number || "—"}</td>
+        <td>₦${Number(inv.room_charge).toLocaleString()}</td>
+        <td>₦${Number(inv.service_charge).toLocaleString()}</td>
+        <td>₦${Number(inv.vat).toLocaleString()}</td>
+        <td><strong>₦${Number(inv.total).toLocaleString()}</strong></td>
+        <td><span class="badge ${inv.status}">${capitalize(inv.status)}</span></td>
+        <td>${methods}</td>
+      </tr>
+    `;
+    }).join("");
+  }
 
-      const { data: invoices, error } = await supabaseClient
-        .from("invoices")
-        .select(`
-          id, room_charge, service_charge, vat, total, status,
-          bookings (
-            guests ( full_name ),
-            rooms!inner ( room_number, hotel_id )
-          )
-        `)
-        .eq("bookings.rooms.hotel_id", currentStaff.hotel_id)
-        .order("created_at", { ascending: false });
+  // Summary stats
+  const totalRevenue = invoices.filter(i => i.status === "paid").reduce((sum, i) => sum + Number(i.total), 0);
+  const outstanding = invoices.filter(i => i.status !== "paid" && i.status !== "refunded").reduce((sum, i) => sum + Number(i.total), 0);
+  const paidCount = invoices.filter(i => i.status === "paid").length;
 
-      if (error) {
-        tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Error loading invoices.</td></tr>`;
-        return;
-      }
+  document.getElementById("statTotalRevenue").textContent = `₦${totalRevenue.toLocaleString()}`;
+  document.getElementById("statOutstanding").textContent = `₦${outstanding.toLocaleString()}`;
+  document.getElementById("statPaidInvoices").textContent = paidCount;
+}
 
-      if (!invoices.length) {
-        tbody.innerHTML = `<tr><td colspan="8" class="empty-state">No invoices yet.</td></tr>`;
-        return;
-      }
+// ============ REPORTS ============
+let revenueChartInstance = null;
+let roomTypeChartInstance = null;
+let sourceChartInstance = null;
 
-      const invoiceIds = invoices.map(i => i.id);
-      const { data: payments } = await supabaseClient
-        .from("payments")
-        .select("invoice_id, method")
-        .in("invoice_id", invoiceIds);
+async function loadReports() {
+  const from = document.getElementById("reportFrom").value;
+  const to = document.getElementById("reportTo").value;
+  if (!from || !to) return;
 
-      const methodsByInvoice = {};
-      (payments || []).forEach(p => {
-        if (!methodsByInvoice[p.invoice_id]) methodsByInvoice[p.invoice_id] = new Set();
-        methodsByInvoice[p.invoice_id].add(p.method);
-      });
+  // Get total room count for occupancy rate calculation
+  const { data: rooms } = await supabaseClient
+    .from("rooms")
+    .select("id, room_type")
+    .eq("hotel_id", currentStaff.hotel_id);
+  const totalRooms = (rooms || []).length || 1;
 
-      tbody.innerHTML = invoices.map(inv => {
-        const methods = methodsByInvoice[inv.id] ? Array.from(methodsByInvoice[inv.id]).map(capitalize).join(", ") : "—";
-        return `
-        <tr>
-          <td>${inv.bookings?.guests?.full_name || "—"}</td>
-          <td>${inv.bookings?.rooms?.room_number || "—"}</td>
-          <td>₦${Number(inv.room_charge).toLocaleString()}</td>
-          <td>₦${Number(inv.service_charge).toLocaleString()}</td>
-          <td>₦${Number(inv.vat).toLocaleString()}</td>
-          <td><strong>₦${Number(inv.total).toLocaleString()}</strong></td>
-          <td><span class="badge ${inv.status}">${capitalize(inv.status)}</span></td>
-          <td>${methods}</td>
-        </tr>
-      `;
-      }).join("");
+  // Get bookings + invoices in range (based on check_in_date falling in range)
+  const { data: bookings, error } = await supabaseClient
+    .from("bookings")
+    .select(`
+      id, check_in_date, check_out_date, status, booking_source,
+      rooms ( room_type ),
+      invoices ( total, status )
+    `)
+    .gte("check_in_date", from)
+    .lte("check_in_date", to)
+    .neq("status", "cancelled");
 
-      const totalRevenue = invoices.filter(i => i.status === "paid").reduce((sum, i) => sum + Number(i.total), 0);
-      const outstanding = invoices.filter(i => i.status !== "paid" && i.status !== "refunded").reduce((sum, i) => sum + Number(i.total), 0);
-      const paidCount = invoices.filter(i => i.status === "paid").length;
+  if (error) {
+    console.error(error);
+    return;
+  }
 
-      document.getElementById("statTotalRevenue").textContent = `₦${totalRevenue.toLocaleString()}`;
-      document.getElementById("statOutstanding").textContent = `₦${outstanding.toLocaleString()}`;
-      document.getElementById("statPaidInvoices").textContent = paidCount;
+  // ---- Summary stats ----
+  const paidInvoices = bookings.filter(b => {
+    const inv = Array.isArray(b.invoices) ? b.invoices[0] : b.invoices;
+    return inv?.status === "paid";
+  });
+  const totalRevenue = paidInvoices.reduce((sum, b) => {
+    const inv = Array.isArray(b.invoices) ? b.invoices[0] : b.invoices;
+    return sum + Number(inv?.total || 0);
+  }, 0);
+
+  const totalNights = bookings.reduce((sum, b) => {
+    const nights = Math.round((new Date(b.check_out_date) - new Date(b.check_in_date)) / 86400000);
+    return sum + nights;
+  }, 0);
+  const avgStay = bookings.length ? (totalNights / bookings.length).toFixed(1) : "0";
+
+  const daySpan = Math.max(1, Math.round((new Date(to) - new Date(from)) / 86400000) + 1);
+  const occupancyRate = ((totalNights / (totalRooms * daySpan)) * 100).toFixed(1);
+
+  document.getElementById("reportRevenue").textContent = `₦${totalRevenue.toLocaleString()}`;
+  document.getElementById("reportBookings").textContent = bookings.length;
+  document.getElementById("reportOccupancyRate").textContent = `${occupancyRate}%`;
+  document.getElementById("reportAvgStay").textContent = avgStay;
+
+  // ---- Daily revenue chart ----
+  const revenueByDay = {};
+  paidInvoices.forEach(b => {
+    const day = b.check_in_date;
+    const inv = Array.isArray(b.invoices) ? b.invoices[0] : b.invoices;
+    revenueByDay[day] = (revenueByDay[day] || 0) + Number(inv?.total || 0);
+  });
+  const sortedDays = Object.keys(revenueByDay).sort();
+
+  const revenueCtx = document.getElementById("revenueChart").getContext("2d");
+  if (revenueChartInstance) revenueChartInstance.destroy();
+  revenueChartInstance = new Chart(revenueCtx, {
+    type: "line",
+    data: {
+      labels: sortedDays,
+      datasets: [{
+        label: "Revenue (₦)",
+        data: sortedDays.map(d => revenueByDay[d]),
+        borderColor: "#2563eb",
+        backgroundColor: "rgba(37,99,235,0.1)",
+        tension: 0.3,
+        fill: true,
+      }],
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } },
+  });
+
+  // ---- Room type breakdown ----
+  const roomTypeCounts = {};
+  bookings.forEach(b => {
+    const type = b.rooms?.room_type || "unknown";
+    roomTypeCounts[type] = (roomTypeCounts[type] || 0) + 1;
+  });
+
+  const roomTypeCtx = document.getElementById("roomTypeChart").getContext("2d");
+  if (roomTypeChartInstance) roomTypeChartInstance.destroy();
+  roomTypeChartInstance = new Chart(roomTypeCtx, {
+    type: "doughnut",
+    data: {
+      labels: Object.keys(roomTypeCounts).map(capitalize),
+      datasets: [{
+        data: Object.values(roomTypeCounts),
+        backgroundColor: ["#2563eb", "#16a34a", "#d97706", "#dc2626"],
+      }],
+    },
+    options: { responsive: true },
+  });
+
+  // ---- Booking source breakdown ----
+  const sourceCounts = {};
+  bookings.forEach(b => {
+    const src = b.booking_source || "unknown";
+    sourceCounts[src] = (sourceCounts[src] || 0) + 1;
+  });
+
+  const sourceCtx = document.getElementById("sourceChart").getContext("2d");
+  if (sourceChartInstance) sourceChartInstance.destroy();
+  sourceChartInstance = new Chart(sourceCtx, {
+    type: "doughnut",
+    data: {
+      labels: Object.keys(sourceCounts).map(s => capitalize(s.replace("_", " "))),
+      datasets: [{
+        data: Object.values(sourceCounts),
+        backgroundColor: ["#2563eb", "#16a34a", "#d97706", "#dc2626"],
+      }],
+    },
+    options: { responsive: true },
+  });
+}
+
+// ============ ROOMS ============
+// ============ OWNER BOOKINGS (Listing Only) ============
+async function loadOwnerBookings() {
+  const tbody = document.getElementById("ownerBookingsTableBody");
+  tbody.innerHTML = `<tr><td colspan="7" class="loading">Loading bookings...</td></tr>`;
+
+  const { data: bookings, error } = await supabaseClient
+    .from("bookings")
+    .select(`
+      id, check_in_date, check_out_date, status,
+      guests ( full_name, phone ),
+      rooms!inner ( room_number, hotel_id ),
+      invoices ( id, total, status )
+    `)
+    .eq("rooms.hotel_id", currentStaff.hotel_id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Error loading bookings.</td></tr>`;
+    return;
+  }
+
+  if (!bookings.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No booking requests yet.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = bookings.map(b => {
+    const invoice = Array.isArray(b.invoices) ? b.invoices[0] : b.invoices;
+    const invoiceStatus = invoice?.status || "unpaid";
+    return `
+    <tr>
+      <td>${b.guests?.full_name || "—"}<br><span style="color:#999;font-size:12px">${b.guests?.phone || ""}</span></td>
+      <td>${b.rooms?.room_number || "—"}</td>
+      <td>${b.check_in_date}</td>
+      <td>${b.check_out_date}</td>
+      <td><span class="badge ${b.status}">${capitalize(b.status.replace("_", " "))}</span></td>
+      <td><span class="badge ${invoiceStatus}">${capitalize(invoiceStatus)}</span></td>
+      <td>
+        ${["pending", "confirmed"].includes(b.status) ? `
+          <button class="action-link" onclick="ownerConfirmBooking('${b.id}')">Confirm</button>
+          <button class="action-link" onclick="ownerMarkPaid('${invoice?.id}')">Mark Paid</button>
+          <button class="action-link danger" onclick="ownerCancelBooking('${b.id}')">Cancel</button>
+        ` : ""}
+      </td>
+    </tr>
+  `;
+  }).join("");
+}
+
+async function ownerConfirmBooking(bookingId) {
+  const { error } = await supabaseClient.from("bookings").update({ status: "confirmed" }).eq("id", bookingId);
+  if (error) { alert("Failed to confirm booking."); return; }
+  await loadOwnerBookings();
+}
+
+async function ownerMarkPaid(invoiceId) {
+  if (!invoiceId) { alert("No invoice found for this booking."); return; }
+  if (!confirm("Mark this booking's invoice as fully paid? Only do this once you've actually received payment from the guest.")) return;
+  const { error } = await supabaseClient.from("invoices").update({ status: "paid" }).eq("id", invoiceId);
+  if (error) { alert("Failed to update payment status."); return; }
+  await loadOwnerBookings();
+}
+
+async function ownerCancelBooking(bookingId) {
+  if (!confirm("Cancel this booking?")) return;
+  const { error } = await supabaseClient.from("bookings").update({ status: "cancelled" }).eq("id", bookingId);
+  if (error) { alert("Failed to cancel booking."); return; }
+  await loadOwnerBookings();
+}
+
+let roomsCache = {};
+
+async function loadRooms() {
+  const { data: rooms, error } = await supabaseClient
+    .from("rooms")
+    .select("*")
+    .eq("hotel_id", currentStaff.hotel_id)
+    .order("room_number");
+
+  const tbody = document.getElementById("roomsTableBody");
+
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Error loading rooms.</td></tr>`;
+    return;
+  }
+
+  roomsCache = {};
+  (rooms || []).forEach(r => { roomsCache[r.id] = r; });
+
+  // Find bookings that cover today, so we can show "Booked" even before
+  // physical check-in happens (room.status alone only reflects who's
+  // actually standing in the room right now, not future reservations)
+  const today = new Date().toISOString().split("T")[0];
+  const { data: activeBookings } = await supabaseClient
+    .from("bookings")
+    .select("room_id, status")
+    .in("status", ["pending", "confirmed", "checked_in"])
+    .lte("check_in_date", today)
+    .gt("check_out_date", today);
+
+  const bookingByRoom = {};
+  (activeBookings || []).forEach(b => { bookingByRoom[b.room_id] = b.status; });
+
+  if (!rooms.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No rooms yet. Add your first room above.</td></tr>`;
+  } else {
+    tbody.innerHTML = rooms.map(r => {
+      const bookingStatus = bookingByRoom[r.id];
+      let todayBadge = `<span class="badge available">Free Today</span>`;
+      if (bookingStatus === "checked_in") todayBadge = `<span class="badge occupied">Checked In</span>`;
+      else if (bookingStatus === "confirmed" || bookingStatus === "pending") todayBadge = `<span class="badge cleaning">Booked</span>`;
+
+      return `
+      <tr>
+        <td>${r.room_number}${r.is_featured ? ' <span class="badge cleaning" style="font-size:10px;">Featured</span>' : ""}</td>
+        <td>${capitalize(r.room_type.replace("_", " "))}</td>
+        <td>₦${Number(r.rate_per_night).toLocaleString()}${r.special_offer_price ? ` <span style="color:#16a34a;font-size:11px;">(offer ₦${Number(r.special_offer_price).toLocaleString()})</span>` : ""}</td>
+        <td><span class="badge ${r.status}">${capitalize(r.status)}</span></td>
+        <td>${todayBadge}</td>
+        <td>
+          <button class="action-link" onclick="openRoomModal('${r.id}')">Edit</button>
+          <button class="action-link" onclick="toggleMaintenance('${r.id}', '${r.status}')">
+            ${r.status === "maintenance" ? "Mark Available" : "Mark Maintenance"}
+          </button>
+        </td>
+      </tr>
+    `;
+    }).join("");
+  }
+
+  // Update stats — "occupied" and "available" now reflect real-world
+  // status: physically occupied, or booked-but-not-yet-checked-in
+  const occupiedCount = rooms.filter(r => bookingByRoom[r.id] === "checked_in" || r.status === "occupied").length;
+  const bookedNotInCount = rooms.filter(r => ["confirmed", "pending"].includes(bookingByRoom[r.id])).length;
+
+  document.getElementById("statTotalRooms").textContent = rooms.length;
+  document.getElementById("statOccupied").textContent = occupiedCount;
+  document.getElementById("statAvailable").textContent = rooms.length - occupiedCount - bookedNotInCount;
+}
+
+async function toggleMaintenance(roomId, currentStatus) {
+  const newStatus = currentStatus === "maintenance" ? "available" : "maintenance";
+  const { error } = await supabaseClient
+    .from("rooms")
+    .update({ status: newStatus })
+    .eq("id", roomId);
+
+  if (error) {
+    alert("Failed to update room status.");
+    return;
+  }
+  await loadRooms();
+}
+
+// ============ IMAGE UPLOAD HELPER ============
+// Uploads files into property-images/<hotel_id>/... — matches the storage
+// RLS policy that scopes uploads to the manager's own hotel folder.
+async function uploadImages(fileList, subfolder) {
+  const urls = [];
+  for (const file of fileList) {
+    const path = `${currentStaff.hotel_id}/${subfolder}/${Date.now()}-${file.name}`;
+    const { error } = await supabaseClient.storage.from("property-images").upload(path, file);
+    if (error) {
+      alert(`Failed to upload ${file.name}: ${error.message}`);
+      continue;
     }
+    const { data } = supabaseClient.storage.from("property-images").getPublicUrl(path);
+    urls.push(data.publicUrl);
+  }
+  return urls;
+}
 
-    // ============ REPORTS ============
-    async function loadReports() {
-      const from = document.getElementById("reportFrom").value;
-      const to = document.getElementById("reportTo").value;
-      if (!from || !to) return;
+function renderGalleryPreview(containerId, urls, onRemove) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = urls.map((url, i) => `
+    <div style="position:relative;">
+      <img src="${url}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;">
+      <button type="button" onclick="${onRemove}(${i})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;">×</button>
+    </div>
+  `).join("");
+}
 
-      const { data: rooms } = await supabaseClient
-        .from("rooms")
-        .select("id, room_type")
-        .eq("hotel_id", currentStaff.hotel_id);
-      const totalRooms = (rooms || []).length || 1;
+// ============ ROOM MODAL (ADD + EDIT) ============
+let roomGalleryUrls = [];
 
-      const { data: bookings, error } = await supabaseClient
-        .from("bookings")
-        .select(`
-          id, check_in_date, check_out_date, status, booking_source,
-          rooms ( room_type ),
-          invoices ( total, status )
-        `)
-        .gte("check_in_date", from)
-        .lte("check_in_date", to)
-        .neq("status", "cancelled");
+function removeRoomGalleryImage(index) {
+  roomGalleryUrls.splice(index, 1);
+  renderGalleryPreview("roomGalleryPreview", roomGalleryUrls, "removeRoomGalleryImage");
+}
 
-      if (error) {
-        console.error(error);
-        return;
-      }
+document.getElementById("roomGalleryInput").addEventListener("change", async (e) => {
+  if (!e.target.files.length) return;
+  const newUrls = await uploadImages(e.target.files, "rooms");
+  roomGalleryUrls = [...roomGalleryUrls, ...newUrls];
+  renderGalleryPreview("roomGalleryPreview", roomGalleryUrls, "removeRoomGalleryImage");
+  e.target.value = "";
+});
 
-      const paidInvoices = bookings.filter(b => {
-        const inv = Array.isArray(b.invoices) ? b.invoices[0] : b.invoices;
-        return inv?.status === "paid";
-      });
-      const totalRevenue = paidInvoices.reduce((sum, b) => {
-        const inv = Array.isArray(b.invoices) ? b.invoices[0] : b.invoices;
-        return sum + Number(inv?.total || 0);
-      }, 0);
+function openRoomModal(roomId) {
+  const room = roomId ? roomsCache[roomId] : null;
 
-      const totalNights = bookings.reduce((sum, b) => {
-        const nights = Math.round((new Date(b.check_out_date) - new Date(b.check_in_date)) / 86400000);
-        return sum + nights;
-      }, 0);
-      const avgStay = bookings.length ? (totalNights / bookings.length).toFixed(1) : "0";
+  document.getElementById("editingRoomId").value = roomId || "";
+  document.getElementById("roomModalTitle").textContent = room ? "Edit Room" : "Add Room";
+  document.getElementById("roomSubmitBtn").textContent = room ? "Save Changes" : "Add Room";
 
-      const daySpan = Math.max(1, Math.round((new Date(to) - new Date(from)) / 86400000) + 1);
-      const occupancyRate = ((totalNights / (totalRooms * daySpan)) * 100).toFixed(1);
+  document.getElementById("roomNumber").value = room?.room_number || "";
+  document.getElementById("roomType").value = room?.room_type || "standard";
+  document.getElementById("roomRate").value = room?.rate_per_night || "";
+  document.getElementById("roomSpecialPrice").value = room?.special_offer_price || "";
+  document.getElementById("roomMaxGuests").value = room?.max_guests || "";
+  document.getElementById("roomBedrooms").value = room?.bedrooms || "";
+  document.getElementById("roomBathrooms").value = room?.bathrooms || "";
+  document.getElementById("roomAmenities").value = (room?.amenities || []).join(", ");
+  document.getElementById("roomDescription").value = room?.description || "";
+  document.getElementById("roomFeatured").checked = !!room?.is_featured;
 
-      document.getElementById("reportRevenue").textContent = `₦${totalRevenue.toLocaleString()}`;
-      document.getElementById("reportBookings").textContent = bookings.length;
-      document.getElementById("reportOccupancyRate").textContent = `${occupancyRate}%`;
-      document.getElementById("reportAvgStay").textContent = avgStay;
+  roomGalleryUrls = room?.gallery_urls || [];
+  renderGalleryPreview("roomGalleryPreview", roomGalleryUrls, "removeRoomGalleryImage");
 
-      // Daily revenue chart
-      const revenueByDay = {};
-      paidInvoices.forEach(b => {
-        const day = b.check_in_date;
-        const inv = Array.isArray(b.invoices) ? b.invoices[0] : b.invoices;
-        revenueByDay[day] = (revenueByDay[day] || 0) + Number(inv?.total || 0);
-      });
-      const sortedDays = Object.keys(revenueByDay).sort();
+  document.getElementById("roomModalOverlay").classList.add("open");
+}
+function closeRoomModal() {
+  document.getElementById("roomModalOverlay").classList.remove("open");
+  document.getElementById("roomForm").reset();
+  roomGalleryUrls = [];
+}
 
-      const revenueCtx = document.getElementById("revenueChart").getContext("2d");
-      if (revenueChartInstance) revenueChartInstance.destroy();
-      revenueChartInstance = new Chart(revenueCtx, {
-        type: "line",
-        data: {
-          labels: sortedDays,
-          datasets: [{
-            label: "Revenue (₦)",
-            data: sortedDays.map(d => revenueByDay[d]),
-            borderColor: "#183A2D",
-            backgroundColor: "rgba(24,58,45,0.1)",
-            tension: 0.3,
-            fill: true,
-          }],
-        },
-        options: { responsive: true, plugins: { legend: { display: false } } },
-      });
+document.getElementById("roomForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const editingId = document.getElementById("editingRoomId").value;
 
-      // Room type breakdown
-      const roomTypeCounts = {};
-      bookings.forEach(b => {
-        const type = b.rooms?.room_type || "unknown";
-        roomTypeCounts[type] = (roomTypeCounts[type] || 0) + 1;
-      });
+  const amenitiesArray = document.getElementById("roomAmenities").value
+    .split(",").map(a => a.trim()).filter(Boolean);
 
-      const roomTypeCtx = document.getElementById("roomTypeChart").getContext("2d");
-      if (roomTypeChartInstance) roomTypeChartInstance.destroy();
-      roomTypeChartInstance = new Chart(roomTypeCtx, {
-        type: "doughnut",
-        data: {
-          labels: Object.keys(roomTypeCounts).map(capitalize),
-          datasets: [{
-            data: Object.values(roomTypeCounts),
-            backgroundColor: ["#183A2D", "#C8A86B", "#2E7D32", "#D4A017"],
-          }],
-        },
-        options: { responsive: true },
-      });
+  const payload = {
+    room_number: document.getElementById("roomNumber").value.trim(),
+    room_type: document.getElementById("roomType").value,
+    rate_per_night: document.getElementById("roomRate").value,
+    special_offer_price: document.getElementById("roomSpecialPrice").value || null,
+    max_guests: document.getElementById("roomMaxGuests").value || null,
+    bedrooms: document.getElementById("roomBedrooms").value || null,
+    bathrooms: document.getElementById("roomBathrooms").value || null,
+    amenities: amenitiesArray.length ? amenitiesArray : null,
+    description: document.getElementById("roomDescription").value.trim() || null,
+    is_featured: document.getElementById("roomFeatured").checked,
+    gallery_urls: roomGalleryUrls.length ? roomGalleryUrls : null,
+    cover_image_url: roomGalleryUrls[0] || null,
+  };
 
-      // Booking source breakdown
-      const sourceCounts = {};
-      bookings.forEach(b => {
-        const src = b.booking_source || "unknown";
-        sourceCounts[src] = (sourceCounts[src] || 0) + 1;
-      });
+  let error;
+  if (editingId) {
+    ({ error } = await supabaseClient.from("rooms").update(payload).eq("id", editingId));
+  } else {
+    ({ error } = await supabaseClient.from("rooms").insert({
+      ...payload,
+      hotel_id: currentStaff.hotel_id,
+      status: "available",
+    }));
+  }
 
-      const sourceCtx = document.getElementById("sourceChart").getContext("2d");
-      if (sourceChartInstance) sourceChartInstance.destroy();
-      sourceChartInstance = new Chart(sourceCtx, {
-        type: "doughnut",
-        data: {
-          labels: Object.keys(sourceCounts).map(s => capitalize(s.replace("_", " "))),
-          datasets: [{
-            data: Object.values(sourceCounts),
-            backgroundColor: ["#183A2D", "#C8A86B", "#2E7D32", "#D4A017"],
-          }],
-        },
-        options: { responsive: true },
-      });
-    }
+  if (error) {
+    alert(error.message.includes("duplicate") ? "A room with this number already exists." : `Failed to save room: ${error.message}`);
+    return;
+  }
 
-    // ============ ROOMS ============
-    async function loadRooms() {
-      const { data: rooms, error } = await supabaseClient
-        .from("rooms")
-        .select("*")
-        .eq("hotel_id", currentStaff.hotel_id)
-        .order("room_number");
+  closeRoomModal();
+  await loadRooms();
+});
 
-      const tbody = document.getElementById("roomsTableBody");
+// ============ PROPERTY DETAILS ============
+let propertyGalleryUrls = [];
 
-      if (error) {
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Error loading rooms.</td></tr>`;
-        return;
-      }
+function removePropertyGalleryImage(index) {
+  propertyGalleryUrls.splice(index, 1);
+  renderGalleryPreview("propGalleryPreview", propertyGalleryUrls, "removePropertyGalleryImage");
+  savePropertyGalleryOnly();
+}
 
-      const today = new Date().toISOString().split("T")[0];
-      const { data: activeBookings } = await supabaseClient
-        .from("bookings")
-        .select("room_id, status")
-        .in("status", ["pending", "confirmed", "checked_in"])
-        .lte("check_in_date", today)
-        .gt("check_out_date", today);
+document.getElementById("propGalleryInput").addEventListener("change", async (e) => {
+  if (!e.target.files.length) return;
+  const newUrls = await uploadImages(e.target.files, "property");
+  propertyGalleryUrls = [...propertyGalleryUrls, ...newUrls];
+  renderGalleryPreview("propGalleryPreview", propertyGalleryUrls, "removePropertyGalleryImage");
+  e.target.value = "";
+  await savePropertyGalleryOnly();
+});
 
-      const bookingByRoom = {};
-      (activeBookings || []).forEach(b => { bookingByRoom[b.room_id] = b.status; });
+async function savePropertyGalleryOnly() {
+  await supabaseClient.from("hotels")
+    .update({ gallery_urls: propertyGalleryUrls.length ? propertyGalleryUrls : null })
+    .eq("id", currentStaff.hotel_id);
+}
 
-      if (!rooms.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No rooms yet. Add your first room above.</td></tr>`;
-        return;
-      }
+async function loadPropertyDetails() {
+  const { data: hotel, error } = await supabaseClient
+    .from("hotels")
+    .select("property_type, short_description, amenities, latitude, longitude, gallery_urls")
+    .eq("id", currentStaff.hotel_id)
+    .single();
 
-      tbody.innerHTML = rooms.map(r => {
-        const bookingStatus = bookingByRoom[r.id];
-        let todayBadge = `<span class="badge free_today">Free Today</span>`;
-        if (bookingStatus === "checked_in") todayBadge = `<span class="badge occupied">Checked In</span>`;
-        else if (bookingStatus === "confirmed" || bookingStatus === "pending") todayBadge = `<span class="badge booked">Booked</span>`;
+  if (error || !hotel) return;
 
-        return `
-        <tr>
-          <td>${r.room_number}</td>
-          <td>${capitalize(r.room_type)}</td>
-          <td>₦${Number(r.rate_per_night).toLocaleString()}</td>
-          <td><span class="badge ${r.status}">${capitalize(r.status)}</span></td>
-          <td>${todayBadge}</td>
-          <td>
-            <button class="action-link" onclick="toggleMaintenance('${r.id}', '${r.status}')">
-              ${r.status === "maintenance" ? "Mark Available" : "Mark Maintenance"}
-            </button>
-          </td>
-        </tr>
-      `;
-      }).join("");
+  document.getElementById("propType").value = hotel.property_type || "hotel";
+  document.getElementById("propDescription").value = hotel.short_description || "";
+  document.getElementById("propAmenities").value = (hotel.amenities || []).join(", ");
+  document.getElementById("propLat").value = hotel.latitude || "";
+  document.getElementById("propLng").value = hotel.longitude || "";
 
-      const occupiedCount = rooms.filter(r => bookingByRoom[r.id] === "checked_in" || r.status === "occupied").length;
-      const bookedNotInCount = rooms.filter(r => ["confirmed", "pending"].includes(bookingByRoom[r.id])).length;
+  propertyGalleryUrls = hotel.gallery_urls || [];
+  renderGalleryPreview("propGalleryPreview", propertyGalleryUrls, "removePropertyGalleryImage");
+}
 
-      document.getElementById("statTotalRooms").textContent = rooms.length;
-      document.getElementById("statOccupied").textContent = occupiedCount;
-      document.getElementById("statAvailable").textContent = rooms.length - occupiedCount - bookedNotInCount;
-    }
+async function savePropertyDetails() {
+  const amenitiesArray = document.getElementById("propAmenities").value
+    .split(",").map(a => a.trim()).filter(Boolean);
 
-    async function toggleMaintenance(roomId, currentStatus) {
-      const newStatus = currentStatus === "maintenance" ? "available" : "maintenance";
-      const { error } = await supabaseClient
-        .from("rooms")
-        .update({ status: newStatus })
-        .eq("id", roomId);
+  const { error } = await supabaseClient.from("hotels").update({
+    property_type: document.getElementById("propType").value,
+    short_description: document.getElementById("propDescription").value.trim() || null,
+    amenities: amenitiesArray.length ? amenitiesArray : null,
+    latitude: document.getElementById("propLat").value || null,
+    longitude: document.getElementById("propLng").value || null,
+  }).eq("id", currentStaff.hotel_id);
 
-      if (error) {
-        alert("Failed to update room status.");
-        return;
-      }
-      await loadRooms();
-    }
+  if (error) {
+    alert("Failed to save property details: " + error.message);
+    return;
+  }
+  alert("Property details saved.");
+}
 
-    function openRoomModal() {
-      document.getElementById("roomModalOverlay").classList.add("open");
-    }
+function useCurrentLocation() {
+  if (!navigator.geolocation) {
+    alert("Location services aren't available on this device/browser.");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      document.getElementById("propLat").value = pos.coords.latitude.toFixed(6);
+      document.getElementById("propLng").value = pos.coords.longitude.toFixed(6);
+    },
+    () => alert("Couldn't get your location. Please check location permissions."),
+  );
+}
 
-    function closeRoomModal() {
-      document.getElementById("roomModalOverlay").classList.remove("open");
-      document.getElementById("roomForm").reset();
-    }
+// ============ STAFF ============
+async function loadStaff() {
+  const { data: staffList, error } = await supabaseClient
+    .from("staff")
+    .select("*")
+    .eq("hotel_id", currentStaff.hotel_id)
+    .order("full_name");
 
-    document.getElementById("roomForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const room_number = document.getElementById("roomNumber").value.trim();
-      const room_type = document.getElementById("roomType").value;
-      const rate_per_night = document.getElementById("roomRate").value;
-      const description = document.getElementById("roomDescription").value.trim();
+  const tbody = document.getElementById("staffTableBody");
 
-      const { error } = await supabaseClient.from("rooms").insert({
-        hotel_id: currentStaff.hotel_id,
-        room_number,
-        room_type,
-        rate_per_night,
-        description: description || null,
-        status: "available",
-      });
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Error loading staff.</td></tr>`;
+    return;
+  }
 
-      if (error) {
-        alert(error.message.includes("duplicate") ? "A room with this number already exists." : "Failed to add room.");
-        return;
-      }
+  tbody.innerHTML = staffList.map(s => `
+    <tr>
+      <td>${s.full_name}</td>
+      <td>${capitalize(s.role)}</td>
+      <td>${s.phone || "—"}</td>
+      <td><span class="badge ${s.active ? "active" : "inactive"}">${s.active ? "Active" : "Inactive"}</span></td>
+      <td>${s.invite_code ? `<code>${s.invite_code}</code>` : "<span style='color:#999'>Joined</span>"}</td>
+      <td>
+        ${s.id !== currentStaff.id ? `
+          <button class="action-link danger" onclick="toggleStaffActive('${s.id}', ${s.active})">
+            ${s.active ? "Deactivate" : "Reactivate"}
+          </button>
+        ` : "<span style='color:#999;font-size:12px'>(you)</span>"}
+      </td>
+    </tr>
+  `).join("");
 
-      closeRoomModal();
-      await loadRooms();
-    });
+  document.getElementById("statStaff").textContent = staffList.filter(s => s.active).length;
+}
 
-    // ============ STAFF ============
-    async function loadStaff() {
-      const { data: staffList, error } = await supabaseClient
-        .from("staff")
-        .select("*")
-        .eq("hotel_id", currentStaff.hotel_id)
-        .order("full_name");
+async function toggleStaffActive(staffId, isActive) {
+  const confirmMsg = isActive ? "Deactivate this staff member? They will lose access immediately." : "Reactivate this staff member?";
+  if (!confirm(confirmMsg)) return;
 
-      const tbody = document.getElementById("staffTableBody");
+  const { error } = await supabaseClient
+    .from("staff")
+    .update({ active: !isActive })
+    .eq("id", staffId);
 
-      if (error) {
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Error loading staff.</td></tr>`;
-        return;
-      }
+  if (error) {
+    alert("Failed to update staff status.");
+    return;
+  }
+  await loadStaff();
+}
 
-      tbody.innerHTML = staffList.map(s => `
-        <tr>
-          <td>${s.full_name}</td>
-          <td>${capitalize(s.role)}</td>
-          <td>${s.phone || "—"}</td>
-          <td><span class="badge ${s.active ? "active" : "inactive"}">${s.active ? "Active" : "Inactive"}</span></td>
-          <td>${s.invite_code ? `<code style="background:#FAF9F6;padding:2px 8px;border-radius:4px;font-weight:600;color:#183A2D;">${s.invite_code}</code>` : "<span style='color:#999'>Joined</span>"}</td>
-          <td>
-            ${s.id !== currentStaff.id ? `
-              <button class="action-link danger" onclick="toggleStaffActive('${s.id}', ${s.active})">
-                ${s.active ? "Deactivate" : "Reactivate"}
-              </button>
-            ` : "<span style='color:#999;font-size:12px'>(you)</span>"}
-          </td>
-        </tr>
-      `).join("");
+function openStaffModal() {
+  document.getElementById("inviteResult").style.display = "none";
+  document.getElementById("staffModalOverlay").classList.add("open");
+}
+function closeStaffModal() {
+  document.getElementById("staffModalOverlay").classList.remove("open");
+  document.getElementById("staffForm").reset();
+  document.getElementById("inviteResult").style.display = "none";
+}
 
-      document.getElementById("statStaff").textContent = staffList.filter(s => s.active).length;
-    }
+document.getElementById("staffForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const full_name = document.getElementById("staffName").value.trim();
+  const role = document.getElementById("staffRole").value;
+  const phone = document.getElementById("staffPhone").value.trim();
 
-    async function toggleStaffActive(staffId, isActive) {
-      const confirmMsg = isActive ? "Deactivate this staff member? They will lose access immediately." : "Reactivate this staff member?";
-      if (!confirm(confirmMsg)) return;
+  const { data, error } = await supabaseClient.rpc("invite_staff_member", {
+    p_full_name: full_name,
+    p_role: role,
+    p_phone: phone,
+  });
 
-      const { error } = await supabaseClient
-        .from("staff")
-        .update({ active: !isActive })
-        .eq("id", staffId);
+  if (error) {
+    alert("Failed to invite staff: " + error.message);
+    return;
+  }
 
-      if (error) {
-        alert("Failed to update staff status.");
-        return;
-      }
-      await loadStaff();
-    }
+  document.getElementById("inviteCodeDisplay").textContent = data.invite_code;
+  document.getElementById("inviteResult").style.display = "block";
+  document.getElementById("staffForm").reset();
+  await loadStaff();
+});
 
-    function openStaffModal() {
-      document.getElementById("inviteResult").style.display = "none";
-      document.getElementById("staffModalOverlay").classList.add("open");
-    }
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
-    function closeStaffModal() {
-      document.getElementById("staffModalOverlay").classList.remove("open");
-      document.getElementById("staffForm").reset();
-      document.getElementById("inviteResult").style.display = "none";
-    }
-
-    document.getElementById("staffForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const full_name = document.getElementById("staffName").value.trim();
-      const role = document.getElementById("staffRole").value;
-      const phone = document.getElementById("staffPhone").value.trim();
-
-      const { data, error } = await supabaseClient.rpc("invite_staff_member", {
-        p_full_name: full_name,
-        p_role: role,
-        p_phone: phone,
-      });
-
-      if (error) {
-        alert("Failed to invite staff: " + error.message);
-        return;
-      }
-
-      document.getElementById("inviteCodeDisplay").textContent = data.invite_code;
-      document.getElementById("inviteResult").style.display = "block";
-      document.getElementById("staffForm").reset();
-      await loadStaff();
-    });
-
-    function capitalize(str) {
-      if (!str) return "";
-      return str.charAt(0).toUpperCase() + str.slice(1);
-    }
-
-    function logout() {
-      if (confirm("Log out of your account?")) {
-        window.location.href = "login.html";
-      }
-    }
-
-    init();
-  </script>
-
+init();
+</script>
 </body>
 </html>
