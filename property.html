@@ -622,31 +622,19 @@
         return;
       }
 
-      const sb = getSupabase();
-      if (!sb) {
-        errorMsg.textContent = "Database connection error. Please try again.";
-        errorMsg.style.display = "block";
-        return;
-      }
-
-      try {
-        const { data, error } = await sb.rpc("create_guest_booking", {
-          p_hotel_id: hotelId,
-          p_room_id: selectedRoom.id,
-          p_check_in: checkIn,
-          p_check_out: checkOut,
-          p_guest_name: name,
-          p_guest_phone: phone,
-          p_guest_email: email,
-        });
-
-        if (error) throw error;
-        showConfirmation(data, name);
-
-      } catch (err) {
-        errorMsg.textContent = err.message || "Failed to create booking. Please try again.";
-        errorMsg.style.display = "block";
-      }
+      // No database booking: nothing is reserved here. We just work out the
+      // total (price x nights, no extra charges) and send the request to the
+      // property owner on WhatsApp, who confirms availability themselves.
+      const nights = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
+      const price = Number(selectedRoom.special_offer_price || selectedRoom.rate_per_night);
+      showConfirmation({
+        room_number: selectedRoom.room_number,
+        nights: nights,
+        total: price * nights,
+        checkIn: checkIn,
+        checkOut: checkOut,
+        phone: phone,
+      }, name);
     }
 
     // ============================================
@@ -661,7 +649,7 @@
 
       if (hotelPhone) {
         const clean = hotelPhone.startsWith("0") ? "234" + hotelPhone.slice(1) : hotelPhone;
-        const message = "Hello, I just requested a booking online for " + selectedRoom.room_number + " (" + data.nights + " night" + (data.nights > 1 ? "s" : "") + "), total \u20a6" + Number(data.total).toLocaleString() + ". My name is " + guestName + ". Please confirm and let me know how to pay.";
+        const message = "Hello, I just requested a booking online for " + selectedRoom.room_number + " (" + data.nights + " night" + (data.nights > 1 ? "s" : "") + "), " + data.checkIn + " to " + data.checkOut + ", total \u20a6" + Number(data.total).toLocaleString() + ". My name is " + guestName + " (" + data.phone + "). Is it available? Please let me know how to pay.";
         waLink = "https://wa.me/" + clean + "?text=" + encodeURIComponent(message);
 
         // Auto-open the WhatsApp chat to the property owner right away —
@@ -674,13 +662,13 @@
       document.getElementById("modalContent").innerHTML =
         '<div class="confirm-screen">' +
           '<span class="icon">\u2705</span>' +
-          '<h3>Booking Requested!</h3>' +
+          '<h3>Request Ready!</h3>' +
           '<p><span class="highlight">' + data.room_number + '</span> \u2022 ' + data.nights + ' night' + (data.nights > 1 ? "s" : "") + '</p>' +
           '<p>Total: <span class="highlight">\u20a6' + Number(data.total).toLocaleString() + '</span></p>' +
-          '<p style="margin-top:12px;">Your booking is <span class="highlight">pending confirmation</span>. ' +
+          '<p style="margin-top:12px;">Your request is <span class="highlight">not confirmed yet</span>. The property will confirm availability with you on WhatsApp. ' +
           (autoOpened
-            ? "We've opened WhatsApp so you can notify the property directly — just tap Send."
-            : "The property will reach out to arrange payment.") +
+            ? "We've opened WhatsApp so you can message the property directly — just tap Send."
+            : "Please contact the property to confirm availability and arrange payment.") +
           '</p>' +
           (hotelPhone ? '<a class="btn btn-whatsapp" href="' + waLink + '" target="_blank" style="margin-top:16px;">\ud83d\udcac ' + (autoOpened ? "Reopen WhatsApp" : "Message on WhatsApp") + '</a>' : "") +
           '<div class="modal-actions" style="margin-top:20px;">' +
